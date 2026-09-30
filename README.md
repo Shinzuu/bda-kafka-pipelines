@@ -3,7 +3,7 @@
 Class-test study guide for **Big Data Analysis, Chapter 8: Data Pipelines, Data
 Lakes, and Real-Time Integration**, restricted to the examined sections
 **8.1–8.3**. Single self-contained HTML file: dense theory, Hard-Facts recall
-tables, a Memory Hooks section, a traps section, an exam checklist, and a **97-question MCQ bank** with
+tables, a Memory Hooks section, a traps section, an exam checklist, and a **70-question MCQ bank** (45 flagged *core*, shown by default) with
 per-question explanations, section filtering, shuffle, retry-wrong and scoring.
 
 **Live:** https://shinzuu.github.io/bda-kafka-pipelines/
