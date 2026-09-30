@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-subject="bda">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="BDA Chapter 8 (8.1-8.3) MCQ study guide - Data Pipelines, Data Lakes and Real-Time Integration: the N-squared integration problem, Apache Sqoop, Apache Flume and Apache Kafka. Dense theory plus 97 exam-shaped multiple-choice questions, each with a full-context explanation.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>%F0%9F%93%A1</text></svg>">
+<title>BDA Ch.8 (8.1-8.3) - Pipelines, Sqoop, Flume, Kafka</title>
+<style>
+  :root{
+    --bg:#0e1016; --panel:#181b24; --panel2:#1f2330; --ink:#e7e9ee; --muted:#9aa3b2;
+    --accent:#f59e0b; --accent2:#fb923c; --warn:#ffb454; --danger:#ff7a7a; --line:#2a2f3d; --star:#fcd34d;
+    --ok:#38d39f; --shadow:0 6px 24px rgba(0,0,0,.35);
+  }
+  html[data-theme="light"]{
+    --bg:#f5f7fb; --panel:#ffffff; --panel2:#f0f3f8; --ink:#1a2230; --muted:#5a6472;
+    --accent:#b45309; --accent2:#c2410c; --warn:#b5730d; --danger:#c0392b; --line:#e2e6ee; --star:#a16207;
+    --ok:#0f9d75; --shadow:0 6px 22px rgba(20,30,60,.08);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16.5px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  #progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));z-index:100;transition:width .1s ease-out}
+
+  .topbar{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .topbar .row{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:9px 18px}
+  .brand{font-weight:800;font-size:14px;white-space:nowrap}
+  .navchips{display:flex;gap:6px;overflow-x:auto;flex:1;scrollbar-width:none;padding-bottom:0;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent);
+    mask-image:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent)}
+  .navchips::-webkit-scrollbar{height:0;display:none}
+  .navchips a{color:var(--muted);font-size:12.5px;padding:5px 10px;border-radius:999px;white-space:nowrap;border:1px solid transparent}
+  .navchips a:hover,.navchips a.active{color:var(--accent);background:var(--panel2);border-color:var(--line);text-decoration:none}
+  .iconbtn{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:7px 10px;font-size:13px;cursor:pointer;line-height:1;white-space:nowrap}
+  .iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+
+  .lesson{max-width:860px;margin:0 auto;padding:0 20px}
+  header.hero{background:linear-gradient(135deg,#4a2f0e,#1a1410);border:1px solid var(--line);border-radius:16px;padding:26px;margin:20px 0 8px;box-shadow:var(--shadow)}
+  html[data-theme="light"] header.hero{background:linear-gradient(135deg,#fff2df,#fffaf3)}
+  header.hero h1{margin:0 0 8px;font-size:clamp(21px,3.6vw,30px);line-height:1.2}
+  .pill{display:inline-block;font-weight:700;font-size:11px;padding:4px 10px;border-radius:999px;margin:5px 6px 0 0}
+  .p-red{background:var(--warn);color:#1a1d24} .p-blue{background:var(--accent);color:#1a1d24} .p-grn{background:var(--ok);color:#06281f}
+  .src{color:var(--muted);font-size:13px;margin-top:11px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
+  .btn{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:8px 13px;font-size:12.5px;cursor:pointer}
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn.primary{background:var(--accent);color:#1a1d24;border-color:var(--accent);font-weight:700} .btn.primary:hover{filter:brightness(1.08);color:#1a1d24}
+
+  section{margin:34px 0;scroll-margin-top:64px}
+  h2{font-size:22px;margin:0 0 4px;line-height:1.25}
+  h2 .kicker{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:2px}
+  h3{font-size:17px;margin:22px 0 6px}
+  h4{font-size:15px;margin:18px 0 4px;color:var(--accent2)}
+  p{margin:12px 0}
+  ul,ol{margin:12px 0;padding-left:22px} li{margin:6px 0}
+  strong,b{color:var(--ink);font-weight:700}
+  code{background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:14px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  pre{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:13px 15px;overflow-x:auto;margin:13px 0;font-size:13px;line-height:1.55}
+  pre code{background:none;padding:0;font-size:13px}
+
+  .why,.analogy,.example,.confusion,.tip,.def{border-radius:12px;padding:13px 16px;margin:14px 0;border:1px solid var(--line);background:var(--panel);box-shadow:var(--shadow);font-size:15.5px}
+  .why{border-left:4px solid var(--accent)}
+  .analogy{border-left:4px solid var(--star);background:color-mix(in srgb,var(--star) 8%,var(--panel))}
+  .example{border-left:4px solid var(--ok)}
+  .confusion{border-left:4px solid var(--danger);background:color-mix(in srgb,var(--danger) 8%,var(--panel))}
+  .tip{border-left:4px solid var(--warn);background:color-mix(in srgb,var(--warn) 9%,var(--panel))}
+  .def{border-left:4px solid var(--muted);background:var(--panel2)}
+  .tag{display:block;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px}
+  .why .tag{color:var(--accent)} .analogy .tag{color:var(--star)} .example .tag{color:var(--ok)}
+  .confusion .tag{color:var(--danger)} .tip .tag{color:var(--warn)} .def .tag{color:var(--muted)}
+
+  table{width:100%;border-collapse:collapse;font-size:14.5px;margin:14px 0}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);font-weight:700}
+
+  .facts{border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:10px;
+         padding:4px 16px 10px;margin:18px 0;background:var(--panel2)}
+  .facts>.tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.08em;
+              text-transform:uppercase;color:var(--ok);margin:12px 0 2px}
+  .facts table{margin:8px 0 4px}
+  .facts th:first-child,.facts td:first-child{width:44%;font-weight:600}
+  .facts .num{font-variant-numeric:tabular-nums;font-weight:800;color:var(--ok)}
+
+  .diagram{background:#ffffff;border:1px solid #d7dce6;border-radius:13px;padding:14px;box-shadow:var(--shadow);margin:16px 0}
+  .diagram svg{width:100%;height:auto;display:block}
+  .caption{font-size:13px;color:var(--muted);margin-top:8px;text-align:center}
+
+  /* ---------- MCQ engine ---------- */
+  .quizbar{position:sticky;top:53px;z-index:30;background:color-mix(in srgb,var(--bg) 94%,transparent);
+    backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:12px;padding:10px 13px;margin:14px 0 18px;
+    display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:var(--shadow)}
+  .quizbar .stat{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .quizbar .stat b{color:var(--ink);font-size:15px}
+  .quizbar .sc-ok{color:var(--ok)} .quizbar .sc-no{color:var(--danger)}
+  .quizbar select{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:7px 9px;font-size:12.5px}
+  .bar{flex:1;min-width:110px;height:7px;border-radius:99px;background:var(--panel2);overflow:hidden;border:1px solid var(--line)}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ok),var(--accent));transition:width .25s}
+
+  .q{border:1px solid var(--line);background:var(--panel);border-radius:13px;padding:15px 17px;margin:13px 0;box-shadow:var(--shadow)}
+  .q.done{border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
+  .q.wrong{border-color:color-mix(in srgb,var(--danger) 45%,var(--line))}
+  .q .qhead{display:flex;gap:9px;align-items:baseline;flex-wrap:wrap;margin-bottom:9px}
+  .q .qn{color:var(--accent);font-weight:800;font-size:13px;flex:none;font-variant-numeric:tabular-nums}
+  .q .qsec{font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:5px;background:color-mix(in srgb,var(--accent) 20%,transparent);color:var(--accent);letter-spacing:.04em}
+  .q .qtext{font-weight:600;font-size:15.5px;flex-basis:100%}
+  .q .qtext code{font-size:13.5px}
+  .opts{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+  .opt{display:flex;gap:10px;align-items:flex-start;text-align:left;width:100%;
+    background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:10px;
+    padding:9px 12px;font-size:14.8px;line-height:1.5;cursor:pointer;font-family:inherit;transition:border-color .12s,background .12s}
+  .opt:hover:not(:disabled){border-color:var(--accent)}
+  .opt:disabled{cursor:default}
+  .opt .lt{font-weight:800;color:var(--muted);flex:none;width:17px}
+  .opt.is-ok{background:color-mix(in srgb,var(--ok) 16%,var(--panel2));border-color:var(--ok)}
+  .opt.is-ok .lt{color:var(--ok)}
+  .opt.is-no{background:color-mix(in srgb,var(--danger) 15%,var(--panel2));border-color:var(--danger)}
+  .opt.is-no .lt{color:var(--danger)}
+  .opt.dim{opacity:.55}
+  .expl{display:none;margin-top:11px;padding-top:10px;border-top:1px dashed var(--line);font-size:14.5px;color:var(--ink)}
+  .q.answered .expl{display:block}
+  .expl .lbl{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--accent2);display:block;margin-bottom:3px}
+
+  .scorecard{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:13px;
+    background:var(--panel);padding:18px;margin:20px 0;text-align:center;box-shadow:var(--shadow);display:none}
+  .scorecard.show{display:block}
+  .scorecard .big{font-size:44px;font-weight:800;color:var(--accent);line-height:1.1;margin:6px 0}
+  .scorecard .verdict{font-size:15px;color:var(--muted)}
+
+  .checklist{list-style:none;padding-left:0}
+  .checklist li{padding:5px 0 5px 30px;position:relative;border-bottom:1px dashed var(--line)}
+  .checklist li:before{content:"\2610";position:absolute;left:6px;font-size:17px;color:var(--accent)}
+
+  #toTop{position:fixed;right:18px;bottom:18px;z-index:50;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#1a1d24;border:none;font-size:20px;cursor:pointer;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;transform:translateY(8px)}
+  #toTop.show{opacity:1;pointer-events:auto;transform:none}
+  footer{color:var(--muted);font-size:13px;text-align:center;padding:24px 0 60px;margin-top:26px;border-top:1px solid var(--line)}
+
+  @media (max-width:760px){
+    body{font-size:16px}
+    .brand{display:none}
+    header.hero{padding:20px 18px}
+    table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .quizbar{top:51px;padding:9px 11px;gap:8px}
+    .quizbar .stat{font-size:12px}
+  }
+  @media print{
+    #progress,.topbar,.toolbar,#toTop,.quizbar{display:none!important}
+    :root,html[data-theme]{--bg:#fff;--panel:#fff;--panel2:#fff;--ink:#000;--muted:#333;--line:#bbb;--shadow:none}
+    .expl{display:block!important} .opt.is-ok{outline:2px solid #000}
+    .why,.analogy,.example,.confusion,.tip,.def,.diagram,section,header.hero,.q{break-inside:avoid;box-shadow:none}
+    pre,table{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<div class="topbar"><div class="row">
+  <span class="brand">BDA Ch.8 &middot; 8.1&ndash;8.3</span>
+  <nav class="navchips" id="nav">
+    <a href="#intro">Overview</a>
+    <a href="#s81">8.1 ETL&rarr;Stream</a>
+    <a href="#s82">8.2 Sqoop &amp; Flume</a>
+    <a href="#s83">8.3 Kafka</a>
+    <a href="#facts">Hard Facts</a>
+    <a href="#mcq">MCQ Bank</a>
+    <a href="#hooks">Memory Hooks</a>
+    <a href="#traps">Traps</a>
+    <a href="#checklist">Checklist</a>
+  </nav>
+  <button class="iconbtn" id="themeBtn" title="Toggle light / dark">&#9681;</button>
+</div></div>
+
+<div class="lesson">
+
+<header class="hero">
+  <h1>Data Pipelines, Data Lakes &amp; Real-Time Integration</h1>
+  <div>
+    <span class="pill p-red">Chapter 8 &middot; Sections 8.1&ndash;8.3</span>
+    <span class="pill p-blue">MCQ format</span>
+    <span class="pill p-grn">97 questions</span>
+  </div>
+  <p style="margin:13px 0 0">Scope: the <b>N&sup2; integration problem</b> and the event bus &middot; the <b>tool landscape</b> &middot; <b>Apache Sqoop</b> bulk RDBMS&harr;HDFS transfer &middot; <b>Apache Flume</b> log ingestion &middot; <b>Apache Kafka</b> &mdash; the distributed append-only log, its architecture, consumer groups, throughput engineering, retention, replay and exactly-once semantics.</p>
+  <div class="src">Source: <i>Data Engineering: Distributed Systems, Scalable Processing, and Modern Architectures</i> &mdash; Rokan Uddin Faruqui, University of Chittagong, 1st ed. 2026 (CC BY 4.0), Chapter 8, pp. 267&ndash;283. <b>Out of scope:</b> 8.4 Lambda, 8.5 Kappa, 8.6 Data Lakes, 8.7&ndash;8.8.</div>
+  <div class="toolbar">
+    <a class="btn primary" href="#mcq">Jump to the MCQ bank &darr;</a>
+    <button class="btn" id="printBtn">Print / PDF</button>
+  </div>
+</header>
+
+<!-- ============================ OVERVIEW ============================ -->
+<section id="intro">
+  <h2><span class="kicker">Overview</span>What this chapter is actually about</h2>
+
+  <p>Chapters 6 and 7 dealt with <i>processing</i> data already sitting in HDFS. Chapter 8 asks the prior question: <b>how does the data get there in the first place</b>, continuously, at low latency, and with enough quality to be trusted downstream?</p>
+
+  <p>The answer the chapter builds towards is one idea: <b>replace the web of point-to-point connections between systems with a single durable append-only log.</b> Apache Kafka, built at LinkedIn in 2011, is the canonical implementation.</p>
+
+  <div class="analogy"><span class="tag">The one-line map of 8.1&ndash;8.3</span>
+    <b>8.1</b> diagnoses the disease (point-to-point ETL is O(N&sup2;)) and prescribes the cure (a central event bus, O(N)). <b>8.2</b> covers the two pre-Kafka Hadoop tools that are now legacy &mdash; Sqoop for databases, Flume for logs. <b>8.3</b> covers the cure itself: Kafka.
+  </div>
+
+  <div class="tip"><span class="tag">Chapter epigraph &mdash; worth memorising the attribution</span>
+    &ldquo;I believe that a unified log is the central data structure that can solve the coherency problem in a distributed, heterogeneous data system.&rdquo;<br>
+    &mdash; <b>Jay Kreps</b>, <i>The Log: What Every Software Engineer Should Know About Real-Time Data&rsquo;s Unifying Abstraction</i>, LinkedIn Engineering, <b>2013</b>.
+  </div>
+</section>
+
+<!-- ============================ 8.1 ============================ -->
+<section id="s81">
+  <h2><span class="kicker">Section 8.1</span>From Batch ETL to Streaming Pipelines</h2>
+
+  <p><b>ETL</b> = <b>E</b>xtract, <b>T</b>ransform, <b>L</b>oad. A scheduled job pulls data from a source, reshapes it to the target schema, and loads it into a destination (typically a data warehouse). Easy to build for one pair of systems. Catastrophic at organisational scale.</p>
+
+  <h3>8.1.1 The N&sup2; Integration Problem</h3>
+
+  <p>In point-to-point ETL, every pair of systems that must exchange data needs its own dedicated ETL job. With <b>N</b> systems, the worst-case number of direct connections is:</p>
+
+  <div class="def"><span class="tag">The formula to memorise</span>
+    <div style="font-size:19px;text-align:center;font-family:Georgia,serif;margin:6px 0">
+      connections = N(N &minus; 1) / 2 &nbsp;=&nbsp; <b>O(N&sup2;)</b>
+    </div>
+  </div>
+
+  <div class="example"><span class="tag">The textbook's worked number &mdash; expect this exact one</span>
+    A bank with <b>50</b> operational systems (core banking, CRM, risk, fraud detection, mobile wallet, settlement, audit, compliance&hellip;) needs up to<br>
+    <b>50 &times; 49 / 2 = 1,225</b> separate ETL jobs.<br>
+    <span style="color:var(--muted)">Figure 8.1 uses the smaller case: N = 4 &rarr; 4 &times; 3 / 2 = <b>6</b> point-to-point connections.</span>
+  </div>
+
+  <h4>The four interconnected problems</h4>
+  <table>
+    <tr><th>Problem</th><th>What it means</th></tr>
+    <tr><td><b>1. Brittleness</b></td><td>Schema change in source A forces simultaneous updates to every ETL job reading from A. A column rename becomes a multi-day incident.</td></tr>
+    <tr><td><b>2. No replay</b></td><td>Traditional ETL deletes data from the source queue after consumption. If a downstream system is offline when the job runs, that data is lost unless the job is re-run from scratch.</td></tr>
+    <tr><td><b>3. High latency</b></td><td>Jobs are scheduled nightly (hourly at best). Real-time fraud detection, live dashboards and event-driven personalisation are <i>architecturally impossible</i> in this model.</td></tr>
+    <tr><td><b>4. Tight coupling</b></td><td>Source and consumer are bound together. Adding a new consumer of an existing source requires modifying or duplicating the source-side ETL job.</td></tr>
+  </table>
+
+  <div class="why"><span class="tag">Key Insight &mdash; the event bus reduces O(N&sup2;) to O(N)</span>
+    Each of the N systems connects to the bus <b>once</b>. Producers write events to named topics; consumers subscribe to the topics they care about. <b>Adding a new consumer requires zero changes to any producer.</b> Total connections = <b>2N</b> (one publish + one subscribe per system) &rarr; complexity <b>O(N)</b>.
+  </div>
+
+  <div class="diagram">
+    <svg viewBox="0 0 700 220" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Segoe UI,sans-serif">
+      <text x="10" y="18" font-size="13" font-weight="700" fill="#b45309">Point-to-Point ETL &mdash; O(N&sup2;)</text>
+      <text x="400" y="18" font-size="13" font-weight="700" fill="#0f9d75">Central Event Bus &mdash; O(N)</text>
+      <g stroke="#c0392b" stroke-width="1.4" opacity=".8">
+        <line x1="60" y1="60" x2="220" y2="60"/><line x1="60" y1="160" x2="220" y2="160"/>
+        <line x1="60" y1="60" x2="60" y2="160"/><line x1="220" y1="60" x2="220" y2="160"/>
+        <line x1="60" y1="60" x2="220" y2="160"/><line x1="220" y1="60" x2="60" y2="160"/>
+      </g>
+      <g fill="#fff" stroke="#334155" stroke-width="1.5">
+        <circle cx="60" cy="60" r="20"/><circle cx="220" cy="60" r="20"/>
+        <circle cx="60" cy="160" r="20"/><circle cx="220" cy="160" r="20"/>
+      </g>
+      <g font-size="13" font-weight="700" fill="#1a2230" text-anchor="middle">
+        <text x="60" y="65">A</text><text x="220" y="65">B</text><text x="60" y="165">C</text><text x="220" y="165">D</text>
+      </g>
+      <text x="140" y="205" font-size="11.5" fill="#c0392b" text-anchor="middle">N=4 &rarr; 6 links &middot; fragile, no replay</text>
+      <line x1="345" y1="30" x2="345" y2="195" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4 4"/>
+      <rect x="520" y="78" width="66" height="64" rx="9" fill="#fef3c7" stroke="#b45309" stroke-width="1.8"/>
+      <text x="553" y="104" font-size="11.5" font-weight="800" fill="#b45309" text-anchor="middle">Event</text>
+      <text x="553" y="119" font-size="11.5" font-weight="800" fill="#b45309" text-anchor="middle">Bus</text>
+      <text x="553" y="134" font-size="9.5" fill="#92400e" text-anchor="middle">(Kafka)</text>
+      <g fill="#fff" stroke="#334155" stroke-width="1.4">
+        <rect x="380" y="52" width="58" height="24" rx="6"/><rect x="380" y="98" width="58" height="24" rx="6"/><rect x="380" y="144" width="58" height="24" rx="6"/>
+        <rect x="628" y="52" width="58" height="24" rx="6"/><rect x="628" y="98" width="58" height="24" rx="6"/><rect x="628" y="144" width="58" height="24" rx="6"/>
+      </g>
+      <g font-size="10.5" fill="#1a2230" text-anchor="middle">
+        <text x="409" y="68">Src A</text><text x="409" y="114">Src B</text><text x="409" y="160">Src C</text>
+        <text x="657" y="68">Con 1</text><text x="657" y="114">Con 2</text><text x="657" y="160">Con 3</text>
+      </g>
+      <g stroke="#0f9d75" stroke-width="1.5" fill="none">
+        <path d="M438 64 L520 96"/><path d="M438 110 L520 110"/><path d="M438 156 L520 124"/>
+        <path d="M586 96 L628 64"/><path d="M586 110 L628 110"/><path d="M586 124 L628 156"/>
+      </g>
+      <text x="530" y="205" font-size="11.5" fill="#0f9d75" text-anchor="middle">2N = 8 links &middot; decoupled, replayable</text>
+    </svg>
+    <div class="caption">Figure 8.1 &mdash; point-to-point ETL versus a central event bus. Each source is oblivious to the number of consumers.</div>
+  </div>
+
+  <h3>8.1.2 The Data Integration Tool Landscape</h3>
+  <p>No single tool is optimal for every scenario. The correct choice depends on <b>data direction</b>, <b>latency requirement</b> and <b>operational complexity budget</b>.</p>
+
+  <table>
+    <tr><th>Tool</th><th>Direction</th><th>Type</th><th>Primary use case</th></tr>
+    <tr><td><b>Apache Sqoop</b></td><td>RDBMS &harr; HDFS</td><td>Batch</td><td>Nightly bulk transfer of relational tables</td></tr>
+    <tr><td><b>Apache Flume</b></td><td>Logs &rarr; HDFS</td><td>Batch / micro-batch</td><td>Web server log ingestion; multi-source aggregation</td></tr>
+    <tr><td><b>Apache Kafka</b></td><td>Any &rarr; Any</td><td>Real-time stream</td><td>Centralised event bus; fraud, clickstream, IoT</td></tr>
+    <tr><td><b>Apache NiFi</b></td><td>Any &rarr; Any</td><td>Visual pipeline</td><td>No-code data routing; IoT edge to cloud</td></tr>
+    <tr><td><b>Spark Streaming</b></td><td>Kafka &rarr; HDFS/DB</td><td>Stream processing</td><td>Stateful aggregation; enrichment; stream joins</td></tr>
+  </table>
+
+  <div class="tip"><span class="tag">Rule of thumb &mdash; the sentence the book prints under Table 8.1</span>
+    Sqoop = bulk DB sync &middot; Flume = log collection &middot; Kafka = real-time events &middot; NiFi = visual routing &middot; Spark Streaming = stream processing.
+  </div>
+</section>
+
+<!-- ============================ 8.2 ============================ -->
+<section id="s82">
+  <h2><span class="kicker">Section 8.2</span>Batch Integration: Apache Sqoop and Apache Flume</h2>
+
+  <p>Before Kafka, two Hadoop-ecosystem tools dominated ingestion. Both are legacy now, but both remain in production at Hadoop-era deployments &mdash; and understanding their design shows <i>why</i> Kafka displaced them.</p>
+
+  <h3>8.2.1 Apache Sqoop &mdash; Bulk RDBMS&harr;HDFS Transfer</h3>
+
+  <div class="def"><span class="tag">Definition</span>
+    <b>Sqoop</b> = <b>SQ</b>L-to-Had<b>OOP</b>. A command-line tool that moves data in bulk between a relational database (MySQL, Oracle, PostgreSQL, SQL Server &mdash; anything JDBC-compliant) and HDFS / Hive / HBase.<br><br>
+    <b>Design insight:</b> convert a table scan into a <b>MapReduce job</b>, where each Map task reads a non-overlapping range of rows over its own JDBC connection, in parallel.
+  </div>
+
+  <h4>The import pipeline &mdash; four steps</h4>
+  <ol>
+    <li><b>Connect via JDBC</b> and query table metadata: column names, types, primary-key range.</li>
+    <li><b>Determine mapper count</b> <i>m</i> (<b>default 4</b>). Split the primary-key range [k<sub>min</sub>, k<sub>max</sub>] into <i>m</i> <b>equal-width</b> sub-ranges; mapper <i>i</i> reads rows where k &isin; [k<sub>min</sub> + (i&minus;1)&middot;&delta;, k<sub>min</sub> + i&middot;&delta;).</li>
+    <li><b>Submit a MapReduce job.</b> Each Map task opens its own JDBC connection, runs the bounded SELECT, writes its partition to HDFS as CSV, Avro, Parquet or SequenceFile.</li>
+    <li><b>No Reduce phase.</b> Each mapper writes an independent part file; HDFS assembles them into the output directory.</li>
+  </ol>
+
+  <div class="confusion"><span class="tag">Highest-yield MCQ fact in 8.2</span>
+    A Sqoop import is a <b>map-only</b> job. There is <b>no Reduce phase</b>. Default mappers = <b>4</b>.
+  </div>
+
+<pre><code># Full import: entire table to HDFS as Parquet, 8 parallel mappers
+sqoop import \
+  --connect jdbc:mysql://db-host:3306/finance \
+  --username analyst \
+  --password-file /user/analyst/.sqoop-pass \
+  --table transactions \
+  --as-parquetfile \
+  --num-mappers 8 \
+  --target-dir /data/raw/transactions \
+  --delete-target-dir
+
+# Incremental import: only rows newer than the last checkpoint
+sqoop import \
+  --connect jdbc:mysql://db-host:3306/finance \
+  --table transactions --as-parquetfile --num-mappers 4 \
+  --target-dir /data/raw/transactions \
+  --incremental append \
+  --check-column txn_timestamp \
+  --last-value '2024-06-11 23:59:59'</code></pre>
+
+  <div class="def"><span class="tag">Definition &mdash; Sqoop incremental import</span>
+    Transfers only rows added since the previous run, identified by a <b>monotonically increasing column</b> (<code>--check-column</code>) and a <b>checkpoint value</b> (<code>--last-value</code>). Two modes:
+    <ul style="margin:8px 0 0">
+      <li><b>append</b> &mdash; new rows, identified by a value greater than the checkpoint.</li>
+      <li><b>lastmodified</b> &mdash; rows whose modification timestamp exceeds the checkpoint.</li>
+    </ul>
+    Sqoop saves the new checkpoint to a <b>saved job</b> so the next run resumes where the last one stopped.
+  </div>
+
+  <p><b>Export pipeline.</b> Sqoop also goes the other way: HDFS &rarr; RDBMS. Typical use &mdash; a Spark batch job writes a summary table to HDFS, and Sqoop exports it back to a MySQL reporting database for a BI tool to query (<code>sqoop export --export-dir &hellip; --update-mode allowinsert --update-key summary_date,region</code>).</p>
+
+  <div class="tip"><span class="tag">Production Lesson &mdash; why Sqoop is being retired</span>
+    <ul style="margin:6px 0 0">
+      <li>Its <b>MapReduce dependency</b> makes it incompatible with YARN-free deployments and cloud object stores, where MapReduce locality is irrelevant.</li>
+      <li>Its <b>JDBC-per-mapper</b> approach hammers the source database with concurrent connections &mdash; often forcing a dedicated read replica.</li>
+      <li><b>Kafka Connect with a JDBC source connector</b> has replaced it: streaming incremental ingestion via CDC, no MapReduce infrastructure, and Kafka replay semantics.</li>
+      <li>Sqoop reached <b>End of Life in 2021</b> and gets no further Apache releases.</li>
+    </ul>
+  </div>
+
+  <h3>8.2.2 Apache Flume &mdash; Log Ingestion Pipelines</h3>
+
+  <p>A distributed, reliable service for streaming <b>log data</b> from many sources into HDFS: web server access logs, application error logs, IoT sensor readings &mdash; semi-structured data stored for later batch analysis.</p>
+
+  <div class="def"><span class="tag">Definition &mdash; the Flume agent (Source &rarr; Channel &rarr; Sink)</span>
+    The fundamental unit of Flume is the <b>agent</b>: a single JVM process with three components forming a directed pipeline.
+    <table style="margin-top:9px">
+      <tr><th>Component</th><th>Job</th><th>Types</th></tr>
+      <tr><td><b>Source</b></td><td>Receives events from an external system</td><td><b>Exec</b> (<code>tail -F logfile</code>), <b>Syslog</b> (UDP/TCP), <b>Avro</b> (from another Flume agent), <b>HTTP</b> (REST push)</td></tr>
+      <tr><td><b>Channel</b></td><td>Buffers events between Source and Sink</td><td><b>Memory Channel</b> &mdash; fast, non-durable. <b>File Channel</b> &mdash; writes to local disk, survives agent restart, costs throughput.</td></tr>
+      <tr><td><b>Sink</b></td><td>Writes buffered events to the destination</td><td><b>HDFS Sink</b> (Avro or text, rolling by time or size), <b>Kafka Sink</b>, <b>HBase Sink</b></td></tr>
+    </table>
+    <p style="margin:9px 0 0">The channel <b>decouples source read speed from sink write speed</b>, absorbing bursts.</p>
+  </div>
+
+<pre><code># flume-agent.conf
+agent.sources  = nginx_src
+agent.channels = file_channel
+agent.sinks    = hdfs_sink
+
+agent.sources.nginx_src.type     = exec
+agent.sources.nginx_src.command  = tail -F /var/log/nginx/access.log
+agent.sources.nginx_src.channels = file_channel
+
+agent.channels.file_channel.type          = file
+agent.channels.file_channel.checkpointDir = /var/flume/checkpoint
+agent.channels.file_channel.dataDirs      = /var/flume/data
+
+agent.sinks.hdfs_sink.type              = hdfs
+agent.sinks.hdfs_sink.hdfs.path         = hdfs://namenode:9000/logs/%Y/%m/%d
+agent.sinks.hdfs_sink.hdfs.fileType     = DataStream
+agent.sinks.hdfs_sink.hdfs.rollInterval = 300        # seconds
+agent.sinks.hdfs_sink.hdfs.rollSize     = 134217728  # = 128 MB
+agent.sinks.hdfs_sink.channel           = file_channel</code></pre>
+
+  <div class="confusion"><span class="tag">Common Misconception &mdash; small files and the NameNode namespace tax</span>
+    A short roll interval (say every 10 s) produces <b>thousands of small files per day</b>. Each one consumes a <b>NameNode metadata entry</b> and degrades NameNode heap.<br><br>
+    <b>Best practice:</b> roll interval <b>300&ndash;600 seconds</b> and roll size <b>128 MB</b> (exactly one HDFS block), so each rolled file is one block. Alternatively run a downstream <b>compaction job</b> (Spark, or Hive <code>INSERT OVERWRITE &hellip; SELECT &hellip;</code>) to merge small files nightly into large Parquet files.
+  </div>
+
+  <div class="example"><span class="tag">System Design Note &mdash; Flume fan-in (two-tier topology)</span>
+    A web application with <b>20 application servers</b>:
+    <ul style="margin:7px 0 0">
+      <li><b>Tier 1 &mdash; 20 edge agents</b> (one per server): Exec or Syslog source &rarr; <b>Memory Channel</b> &rarr; <b>Avro Sink</b>.</li>
+      <li><b>Tier 2 &mdash; 2 collector agents</b> (each receiving from 10 edge agents): <b>Avro Source</b> &rarr; <b>File Channel</b> &rarr; <b>HDFS Sink</b>.</li>
+    </ul>
+    <p style="margin:8px 0 0">Two wins: <b>durability</b> (File Channel survives collector restart) and <b>aggregation</b> (20 HDFS writers become 2, greatly reducing small-file pressure). Specified entirely in configuration files &mdash; <b>no code required</b>.</p>
+  </div>
+</section>
+
+<!-- ============================ 8.3 ============================ -->
+<section id="s83">
+  <h2><span class="kicker">Section 8.3</span>Apache Kafka: The Distributed Append-Only Log</h2>
+
+  <div class="facts"><span class="tag">Origin facts &mdash; near-certain MCQ material</span>
+    <table>
+      <tr><td>Created by</td><td class="num">Jay Kreps, Neha Narkhede, Jun Rao</td></tr>
+      <tr><td>Where and when</td><td class="num">LinkedIn, 2010&ndash;2011</td></tr>
+      <tr><td>Open-sourced to Apache</td><td class="num">2012</td></tr>
+      <tr><td>Problem it was built to solve</td><td class="num">The N&sup2; integration problem in LinkedIn's activity data pipeline</td></tr>
+    </table>
+  </div>
+
+  <div class="why"><span class="tag">The central innovation</span>
+    Not a clever algorithm and not a hardware trick &mdash; a <b>rethinking of what a message broker should be</b>.<br><br>
+    <b>Traditional queues</b> (ActiveMQ, RabbitMQ) model messages as <i>transient objects</i>: once a consumer acknowledges receipt, the message is <b>deleted</b>.<br>
+    <b>Kafka</b> models messages as records in a <i>durable, immutable, ordered log</i>: <b>retained for a configurable period regardless of whether they have been consumed</b>, and any consumer can read them at any time by specifying an <b>offset</b>.
+  </div>
+
+  <h3>8.3.1 The Core Log Abstraction</h3>
+
+  <p>A <b>log</b>, in the computer-science sense, is the simplest possible storage abstraction: an <b>append-only, totally ordered sequence of records</b>. Every database transaction log, every write-ahead log, every filesystem journal is a log in this sense. Kafka's insight: this same abstraction &mdash; which databases use for <i>durability</i> &mdash; can serve as the backbone of an entire distributed data infrastructure.</p>
+
+  <div class="def"><span class="tag">Definition &mdash; the four fields of a Kafka record</span>
+    <table style="margin-top:6px">
+      <tr><th>Field</th><th>Meaning</th></tr>
+      <tr><td><b>Key</b> (optional)</td><td>Byte array used to determine <b>partition assignment</b>. All records with the same key go to the same partition, preserving key-level ordering.</td></tr>
+      <tr><td><b>Value</b></td><td>The payload bytes &mdash; serialised JSON, Avro, Protobuf or raw bytes.</td></tr>
+      <tr><td><b>Timestamp</b></td><td>Producer-assigned or broker-assigned event time.</td></tr>
+      <tr><td><b>Offset</b></td><td>A <b>monotonically increasing integer assigned by the broker</b> that uniquely identifies the record <b>within its partition</b>.</td></tr>
+    </table>
+    <p style="margin:9px 0 0">Records are <b>never modified or deleted within the retention period</b>. The log is the single source of truth; all consumers derive their view from it by tracking their own read offset.</p>
+  </div>
+
+  <div class="diagram">
+    <svg viewBox="0 0 700 190" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Segoe UI,sans-serif">
+      <text x="10" y="17" font-size="12.5" font-weight="700" fill="#c0392b">Traditional Queue</text>
+      <g fill="#fee2e2" stroke="#c0392b" stroke-width="1.4">
+        <rect x="14" y="34" width="56" height="30" rx="5"/><rect x="78" y="34" width="56" height="30" rx="5"/>
+        <rect x="142" y="34" width="56" height="30" rx="5"/><rect x="206" y="34" width="56" height="30" rx="5"/>
+      </g>
+      <g font-size="11" fill="#7f1d1d" text-anchor="middle">
+        <text x="42" y="54">msg</text><text x="106" y="54">msg</text><text x="170" y="54">msg</text><text x="234" y="54">msg</text>
+      </g>
+      <text x="14" y="86" font-size="11.5" fill="#c0392b">consumed = deleted</text>
+      <text x="14" y="102" font-size="11.5" fill="#c0392b">late consumer loses the data</text>
+      <line x1="300" y1="10" x2="300" y2="180" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4 4"/>
+      <text x="330" y="17" font-size="12.5" font-weight="700" fill="#0f9d75">Kafka Partition &mdash; append-only log</text>
+      <text x="330" y="32" font-size="10" fill="#64748b">oldest</text>
+      <text x="686" y="32" font-size="10" fill="#64748b" text-anchor="end">newest</text>
+      <g fill="#dcfce7" stroke="#0f9d75" stroke-width="1.4">
+        <rect x="330" y="38" width="56" height="30" rx="5"/><rect x="390" y="38" width="56" height="30" rx="5"/>
+        <rect x="450" y="38" width="56" height="30" rx="5"/><rect x="510" y="38" width="56" height="30" rx="5"/>
+        <rect x="570" y="38" width="56" height="30" rx="5"/><rect x="630" y="38" width="56" height="30" rx="5"/>
+      </g>
+      <g font-size="12" font-weight="700" fill="#065f46" text-anchor="middle">
+        <text x="358" y="58">0</text><text x="418" y="58">1</text><text x="478" y="58">2</text>
+        <text x="538" y="58">3</text><text x="598" y="58">4</text><text x="658" y="58">5</text>
+      </g>
+      <g stroke="#2563eb" stroke-width="1.5" fill="none">
+        <path d="M478 68 L478 96"/><path d="M658 68 L658 96"/>
+      </g>
+      <g fill="#dbeafe" stroke="#2563eb" stroke-width="1.4">
+        <rect x="440" y="96" width="76" height="26" rx="6"/><rect x="620" y="96" width="76" height="26" rx="6"/>
+      </g>
+      <g font-size="11" fill="#1e3a8a" text-anchor="middle">
+        <text x="478" y="113">Con A o=2</text><text x="658" y="113">Con B o=5</text>
+      </g>
+      <text x="330" y="148" font-size="11.5" fill="#0f9d75">each consumer tracks its own offset</text>
+      <text x="330" y="165" font-size="11.5" fill="#0f9d75">messages retained for days or weeks &mdash; replay any time</text>
+    </svg>
+    <div class="caption">Figure 8.2 &mdash; traditional queue (delete on consume) versus Kafka's retained append-only log.</div>
+  </div>
+
+  <h3>8.3.2 Kafka Architecture &mdash; Topics, Partitions, Offsets, Brokers</h3>
+
+  <table>
+    <tr><th>#</th><th>Concept</th><th>What you must be able to say</th></tr>
+    <tr><td>1</td><td><b>Topic</b></td><td>A <b>named, durable, append-only log</b> for a category of events. Analogous to a database table, <b>but append-only</b>. Producers write to it; consumers read from it. (e.g. <code>payment-events</code>, <code>rideshare-gps-pings</code>.)</td></tr>
+    <tr><td>2</td><td><b>Partition</b></td><td>Each topic is split into <b>P &ge; 1 ordered partitions</b>. A partition is an <b>independent ordered log residing on a single broker</b>. Gives two things: <b>parallelism</b> and <b>key-based ordering</b> (same key &rarr; same partition via key hashing).</td></tr>
+    <tr><td>3</td><td><b>Offset</b></td><td>A unique, <b>monotonically increasing integer</b> = the message's position in the partition log. Offsets are <b>dense and ordered within a partition</b> and <b>NOT globally unique across partitions</b>. The broker keeps <b>no per-consumer state</b>; consumers store offsets in a special topic named <code>__consumer_offsets</code>.</td></tr>
+    <tr><td>4</td><td><b>Broker</b></td><td>A Kafka server process storing partitions on local disk. Each partition has <b>one leader replica</b> (handles <b>all reads and writes</b>) and <b>R&minus;1 follower replicas</b> (copy asynchronously, stand in on failure). <b>Default replication factor R = 3</b>, tolerating the simultaneous failure of <b>any two brokers</b> without data loss.</td></tr>
+    <tr><td>5</td><td><b>ZooKeeper / KRaft</b></td><td>Kafka <b>before 3.0</b> used <b>Apache ZooKeeper</b> for cluster metadata and leader election. <b>Kafka 3.0</b> introduced <b>KRaft</b> (Kafka Raft), a self-managed metadata quorum built into the brokers, removing the ZooKeeper dependency.</td></tr>
+  </table>
+
+  <div class="confusion"><span class="tag">Classic trap</span>
+    Offsets are unique <b>within a partition</b>, not across the topic. Two different partitions both have an offset 0, an offset 1, and so on. Global ordering across a topic is <b>not</b> guaranteed &mdash; only <b>per-partition</b> ordering is.
+  </div>
+
+  <h3>8.3.3 Producers, Consumers and Consumer Groups</h3>
+
+  <p><b>Producer.</b> Any application that publishes messages to a topic. It selects the target partition either by <b>hashing the message key</b> (<code>hash(key) % P</code>) or by <b>round-robin if no key is specified</b>. It batches messages in memory and sends a batch to the partition <b>leader</b> in a single network request &mdash; trading latency for throughput via <code>batch.size</code> and <code>linger.ms</code>.</p>
+
+  <p><b>Consumer.</b> Any application that reads messages by <b>polling</b> the broker and advancing its read offset. It never pushes messages back to acknowledge deletion; it simply records that it has processed up to a given offset.</p>
+
+  <div class="def"><span class="tag">Definition &mdash; consumer group</span>
+    A named set of consumer processes that <b>collectively consume all partitions of a topic</b>. Kafka's partition-assignment guarantee: <b>each partition is assigned to exactly one consumer in the group at any point in time.</b> Therefore:
+    <ul style="margin:8px 0 0">
+      <li>Adding consumers to a group (<b>up to P consumers</b>) increases parallelism proportionally. Beyond P, extra consumers sit idle.</li>
+      <li>Two independent applications (fraud detection, analytics) reading the same topic use <b>different consumer groups</b>. Each group keeps its own offsets, so <b>both receive every message independently</b>.</li>
+      <li>When a consumer joins or leaves, Kafka triggers a <b>rebalance</b>: partitions are reassigned. Kafka <b>2.4+</b> uses <b>cooperative incremental rebalancing</b> to minimise disruption.</li>
+    </ul>
+  </div>
+
+<pre><code>producer = KafkaProducer(
+    bootstrap_servers="localhost:9092",
+    key_serializer=lambda k: k.encode(),
+    value_serializer=lambda v: json.dumps(v).encode(),
+    batch_size=16384,     # 16 KB  -- trade latency for throughput
+    linger_ms=5,
+    acks='all',           # wait for ALL in-sync replicas
+    retries=5,
+)
+# key=str(sender) -> all transactions from the same sender land in the
+# same partition, preserving send-order for that sender
+producer.send(TOPIC, key=str(txn["sender"]), value=txn)
+producer.flush()          # block until all buffered records are sent
+
+consumer = KafkaConsumer(
+    TOPIC, bootstrap_servers="localhost:9092",
+    group_id="fraud-detection-v1",
+    auto_offset_reset="earliest",   # start from offset 0 if new group
+    enable_auto_commit=True, auto_commit_interval_ms=5000,
+)</code></pre>
+
+  <h3>8.3.4 Kafka Throughput &mdash; Sequential I/O and Zero-Copy Transfer</h3>
+
+  <div class="facts"><span class="tag">The benchmark &mdash; Kreps et al., 2011</span>
+    <table>
+      <tr><td>Kafka producer throughput</td><td class="num">505,000 messages/sec</td></tr>
+      <tr><td>Versus ActiveMQ</td><td class="num">~11&times; faster</td></tr>
+      <tr><td>Versus RabbitMQ</td><td class="num">~3.4&times; faster</td></tr>
+    </table>
+  </div>
+
+  <p>Four engineering decisions explain the advantage:</p>
+
+  <table>
+    <tr><th>#</th><th>Decision</th><th>Detail</th></tr>
+    <tr><td>1</td><td><b>Sequential disk writes</b></td><td>Kafka <b>never updates a message in place</b> &mdash; partition logs are written by appending to the active segment file. Sequential writes on a spinning disk reach <b>500&ndash;600 MB/s</b>; random writes on the same disk reach only <b>50&ndash;100 MB/s</b> because of seek latency. The OS <b>page cache</b> prefetches the next blocks, so effective write speed approaches raw disk bandwidth <b>even without SSDs</b>.</td></tr>
+    <tr><td>2</td><td><b>Zero-copy transfer</b></td><td>A traditional broker copies data disk &rarr; kernel buffer &rarr; <b>user-space buffer</b> &rarr; socket buffer &rarr; NIC: <b>4 copies, 2 context switches</b>. Kafka uses the Linux <code>sendfile()</code> system call to go from kernel buffer straight to the NIC, bypassing user space: <b>2 copies, 0 context switches</b>. This <b>halves CPU usage</b> for read-heavy workloads.</td></tr>
+    <tr><td>3</td><td><b>Batch compression</b></td><td>Producers compress a <b>whole batch as a single unit</b> (<b>Snappy, LZ4, Zstandard or GZIP</b>). The broker <b>stores the compressed batch without decompressing it</b>; consumers decompress on receipt. Typical ratio for structured log data: <b>5&ndash;10&times;</b>, cutting network and disk I/O proportionally.</td></tr>
+    <tr><td>4</td><td><b>Partition parallelism</b></td><td>Throughput scales <b>linearly</b> with partition count: P partitions allow P parallel producer threads and up to P consumers in a group. Going from 1 to 32 partitions increases end-to-end throughput by a factor <b>approaching 32</b>, bounded by broker and network capacity.</td></tr>
+  </table>
+
+  <div class="why"><span class="tag">Key Insight &mdash; Kafka's disk is faster than memory for sequential I/O</span>
+    The common assumption that keeping all messages in RAM beats disk is true <b>for random access only</b>. For the <b>sequential</b> access pattern Kafka's append-only log produces, the OS page cache makes sequential disk access <b>faster than a heap-allocated data structure at large scale</b>: sequential disk reads saturate the <b>memory bus</b> rather than L3 cache, and the kernel's <b>LRU</b> page cache is better tuned for this workload than a custom in-process cache.
+  </div>
+
+  <h3>8.3.5 Retention, Replay and Exactly-Once Semantics</h3>
+
+  <h4>Retention policy</h4>
+  <p>Kafka retains messages for a configurable period (<code>retention.ms</code>, <b>default 7 days</b>) or up to a configurable total log size (<code>retention.bytes</code>). When both conditions are reached, the <b>oldest segment files are deleted</b>. A consumer that has not read a partition before its messages expire <b>will miss those messages</b> &mdash; a deliberate design choice that <b>prioritises throughput over guaranteed delivery to slow consumers</b>.</p>
+
+  <h4>Replay</h4>
+  <p>Because offsets are persistent and messages are <b>not deleted on consumption</b>, any consumer can reset its offset to any point in the retention window and re-read. Three things this enables:</p>
+  <ul>
+    <li><b>Backfilling</b> &mdash; a new downstream service can launch and immediately process historical data without re-ingesting from the source.</li>
+    <li><b>Bug recovery</b> &mdash; a consumer whose bug corrupted its state resets to the last known-good offset and reprocesses.</li>
+    <li><b>Multi-consumer independence</b> &mdash; a second consumer group reading the same topic starts fresh at offset 0 without affecting the first group's position.</li>
+  </ul>
+
+  <div class="def"><span class="tag">Definition &mdash; exactly-once semantics, introduced in Kafka 0.11 (2017)</span>
+    <table style="margin-top:6px">
+      <tr><th>Mechanism</th><th>How it works</th></tr>
+      <tr><td><b>Idempotent producer</b></td><td>The producer assigns a <b>monotonically increasing sequence number</b> to each batch. If the broker receives a duplicate batch (e.g. a network retry), it <b>deduplicates using the sequence number</b>. Prevents duplicate writes caused by <b>producer retries</b>.</td></tr>
+      <tr><td><b>Transactional API</b></td><td>A producer opens a transaction, sends messages to <b>multiple partitions</b>, then either <b>commits</b> (all messages become visible atomically) or <b>aborts</b> (rolls back). Combined with <code>isolation.level=read_committed</code> on the consumer side, this gives exactly-once across the full <b>produce&ndash;consume&ndash;produce</b> pipeline.</td></tr>
+    </table>
+  </div>
+
+  <div class="tip"><span class="tag">Production Lesson &mdash; the Confluent Schema Registry</span>
+    At small scale, producers and consumers can agree on a format informally. At scale &mdash; <b>4,000 topics and 400 microservices, as at Netflix</b> &mdash; a producer that adds a field to its Avro schema without warning <b>crashes every consumer</b>.<br><br>
+    The <b>Confluent Schema Registry</b> (open-source) registers every Avro / Protobuf / JSON Schema version under a <b>subject</b>, typically <code>{topic}-value</code>. Producers embed the <b>schema ID (an integer)</b> in each message; consumers look the schema up by ID on receipt. The Registry enforces a <b>compatibility policy &mdash; BACKWARD, FORWARD or FULL</b> &mdash; rejecting schema changes that would break existing consumers. At Netflix and LinkedIn, deploying one is considered <b>non-negotiable</b> for production Kafka.
+  </div>
+</section>
+
+<!-- ============================ HARD FACTS ============================ -->
+<section id="facts">
+  <h2><span class="kicker">Recall</span>Hard Facts &mdash; the numbers and names they test</h2>
+  <p>Cover the right column. Say each one aloud before revealing. These are the fill-in-the-blank and MCQ targets.</p>
+
+  <div class="facts"><span class="tag">8.1 &mdash; integration complexity</span>
+    <table>
+      <tr><td>Point-to-point connections with N systems</td><td class="num">N(N&minus;1)/2 = O(N&sup2;)</td></tr>
+      <tr><td>Bank example: 50 systems</td><td class="num">50 &times; 49 / 2 = 1,225 ETL jobs</td></tr>
+      <tr><td>Figure 8.1 example: N = 4</td><td class="num">6 point-to-point links</td></tr>
+      <tr><td>Event bus connections</td><td class="num">2N &rarr; O(N)</td></tr>
+      <tr><td>The four point-to-point problems</td><td class="num">Brittleness, No replay, High latency, Tight coupling</td></tr>
+      <tr><td>Traditional ETL scheduling latency</td><td class="num">Nightly (hourly at best)</td></tr>
+    </table>
+
+    <span class="tag">8.2 &mdash; Sqoop</span>
+    <table>
+      <tr><td>Sqoop stands for</td><td class="num">SQL-to-Hadoop</td></tr>
+      <tr><td>Execution engine</td><td class="num">MapReduce (map-only &mdash; NO Reduce phase)</td></tr>
+      <tr><td>Default number of mappers</td><td class="num">4</td></tr>
+      <tr><td>How work is split</td><td class="num">Primary-key range into m equal-width sub-ranges</td></tr>
+      <tr><td>Output formats</td><td class="num">CSV, Avro, Parquet, SequenceFile</td></tr>
+      <tr><td>Incremental modes</td><td class="num">append &middot; lastmodified</td></tr>
+      <tr><td>Incremental flags</td><td class="num">--check-column &middot; --last-value</td></tr>
+      <tr><td>End of Life</td><td class="num">2021</td></tr>
+      <tr><td>Modern replacement</td><td class="num">Kafka Connect + JDBC source connector (CDC)</td></tr>
+    </table>
+
+    <span class="tag">8.2 &mdash; Flume</span>
+    <table>
+      <tr><td>The three agent components</td><td class="num">Source &rarr; Channel &rarr; Sink</td></tr>
+      <tr><td>Fast but non-durable channel</td><td class="num">Memory Channel</td></tr>
+      <tr><td>Durable channel (survives restart)</td><td class="num">File Channel</td></tr>
+      <tr><td>Source types</td><td class="num">Exec, Syslog, Avro, HTTP</td></tr>
+      <tr><td>Sink types</td><td class="num">HDFS, Kafka, HBase</td></tr>
+      <tr><td>Recommended roll interval</td><td class="num">300&ndash;600 seconds</td></tr>
+      <tr><td>Recommended roll size</td><td class="num">128 MB = 134217728 bytes (one HDFS block)</td></tr>
+      <tr><td>Fan-in example</td><td class="num">20 edge agents &rarr; 2 collector agents</td></tr>
+    </table>
+
+    <span class="tag">8.3 &mdash; Kafka core</span>
+    <table>
+      <tr><td>Creators</td><td class="num">Jay Kreps, Neha Narkhede, Jun Rao</td></tr>
+      <tr><td>Origin / open-sourced</td><td class="num">LinkedIn 2010&ndash;2011 / Apache 2012</td></tr>
+      <tr><td>The five architecture concepts</td><td class="num">Topic, Partition, Offset, Broker, ZooKeeper/KRaft</td></tr>
+      <tr><td>Record fields</td><td class="num">Key, Value, Timestamp, Offset</td></tr>
+      <tr><td>Offset uniqueness scope</td><td class="num">Within a partition only &mdash; never global</td></tr>
+      <tr><td>Where consumer offsets live</td><td class="num">__consumer_offsets topic</td></tr>
+      <tr><td>Default replication factor</td><td class="num">R = 3 &rarr; tolerates 2 broker failures</td></tr>
+      <tr><td>Reads and writes served by</td><td class="num">The leader replica only</td></tr>
+      <tr><td>ZooKeeper removed in</td><td class="num">Kafka 3.0 (replaced by KRaft)</td></tr>
+      <tr><td>Partition choice with a key / without</td><td class="num">hash(key) % P / round-robin</td></tr>
+      <tr><td>Partition-to-consumer rule</td><td class="num">Each partition &rarr; exactly one consumer per group</td></tr>
+      <tr><td>Cooperative incremental rebalancing from</td><td class="num">Kafka 2.4+</td></tr>
+    </table>
+
+    <span class="tag">8.3 &mdash; throughput &amp; guarantees</span>
+    <table>
+      <tr><td>Producer throughput (Kreps et al. 2011)</td><td class="num">505,000 messages/sec</td></tr>
+      <tr><td>Versus ActiveMQ / RabbitMQ</td><td class="num">11&times; / 3.4&times;</td></tr>
+      <tr><td>Sequential vs random disk write</td><td class="num">500&ndash;600 MB/s vs 50&ndash;100 MB/s</td></tr>
+      <tr><td>Zero-copy system call</td><td class="num">sendfile()</td></tr>
+      <tr><td>Copies &amp; context switches saved</td><td class="num">4 copies / 2 switches &rarr; 2 copies / 0 switches</td></tr>
+      <tr><td>Compression codecs</td><td class="num">Snappy, LZ4, Zstandard, GZIP</td></tr>
+      <tr><td>Typical compression ratio</td><td class="num">5&ndash;10&times;</td></tr>
+      <tr><td>Producer batching knobs</td><td class="num">batch.size = 16384 (16 KB), linger.ms = 5</td></tr>
+      <tr><td>Strongest durability ack setting</td><td class="num">acks=all (all in-sync replicas)</td></tr>
+      <tr><td>Default retention period</td><td class="num">retention.ms = 7 days</td></tr>
+      <tr><td>Exactly-once introduced in</td><td class="num">Kafka 0.11 (2017)</td></tr>
+      <tr><td>The two exactly-once mechanisms</td><td class="num">Idempotent producer &middot; Transactional API</td></tr>
+      <tr><td>Consumer-side transaction setting</td><td class="num">isolation.level=read_committed</td></tr>
+      <tr><td>Schema Registry subject naming</td><td class="num">{topic}-value</td></tr>
+      <tr><td>Schema compatibility policies</td><td class="num">BACKWARD, FORWARD, FULL</td></tr>
+      <tr><td>Netflix scale figure</td><td class="num">4,000 topics &middot; 400 microservices</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============================ MCQ ============================ -->
+<section id="mcq">
+  <h2><span class="kicker">Practice</span>MCQ Bank &mdash; 97 questions</h2>
+  <p>Tap an option to lock your answer. The correct choice turns green, yours turns red if wrong, and the explanation opens underneath. Use the filter to drill one section at a time.</p>
+
+  <div class="quizbar">
+    <select id="filter" aria-label="Filter questions by section">
+      <option value="all">All sections (97)</option>
+      <option value="8.1">8.1 only (17)</option>
+      <option value="8.2">8.2 only (25)</option>
+      <option value="8.3">8.3 only (55)</option>
+    </select>
+    <span class="stat">Score <b id="scoreTxt">0 / 0</b></span>
+    <span class="stat sc-ok">&#10003; <b id="okTxt">0</b></span>
+    <span class="stat sc-no">&#10007; <b id="noTxt">0</b></span>
+    <span class="bar"><i id="barFill"></i></span>
+    <button class="btn" id="shuffleBtn">Shuffle</button>
+    <button class="btn" id="wrongBtn">Retry wrong</button>
+    <button class="btn" id="resetBtn">Reset</button>
+  </div>
+
+  <div id="quiz"></div>
+
+  <div class="scorecard" id="scorecard">
+    <div style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:800">Final score</div>
+    <div class="big" id="finalBig">0%</div>
+    <div class="verdict" id="finalVerdict"></div>
+    <div class="toolbar" style="justify-content:center">
+      <button class="btn primary" id="wrongBtn2">Drill the ones I missed</button>
+      <button class="btn" id="resetBtn2">Start over</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ MEMORY HOOKS ============================ -->
+<section id="hooks">
+  <h2><span class="kicker">One-read retention</span>Memory Hooks &mdash; the whole chapter in six chunks</h2>
+  <p>Everything in 8.1&ndash;8.3 collapses into six clusters. Learn the cluster, and the individual facts hang off it. Read this section <b>after</b> the theory and <b>before</b> the MCQs.</p>
+
+  <div class="analogy"><span class="tag">Hook 1 &mdash; the four ETL problems: &ldquo;Big Nasty Headache Today&rdquo;</span>
+    <b>B</b>rittleness &middot; <b>N</b>o replay &middot; <b>H</b>igh latency &middot; <b>T</b>ight coupling.<br>
+    Each one has a matching cure in Kafka, which is why the chapter is ordered the way it is:
+    <table style="margin-top:9px">
+      <tr><th>Problem (8.1)</th><th>Kafka's answer (8.3)</th></tr>
+      <tr><td>Brittleness</td><td>Schema Registry with a compatibility policy</td></tr>
+      <tr><td>No replay</td><td>Retained log &mdash; reset the offset and re-read</td></tr>
+      <tr><td>High latency</td><td>Real-time streaming instead of nightly batch</td></tr>
+      <tr><td>Tight coupling</td><td>Topics and consumer groups &mdash; zero producer changes</td></tr>
+    </table>
+  </div>
+
+  <div class="analogy"><span class="tag">Hook 2 &mdash; the tool table as one sentence</span>
+    <b>Sqoop</b> syncs <b>databases</b> &middot; <b>Flume</b> collects <b>logs</b> &middot; <b>Kafka</b> carries <b>events</b> &middot; <b>NiFi</b> draws <b>pictures</b> &middot; <b>Spark Streaming</b> <b>processes</b> the stream.<br>
+    Then add direction: Sqoop is the only <b>&harr;</b>, Flume is the only pure <b>one-way to HDFS</b>, Kafka and NiFi are both <b>Any&rarr;Any</b> (separated by <i>type</i>, not direction), Spark Streaming starts <b>from Kafka</b>.
+  </div>
+
+  <div class="analogy"><span class="tag">Hook 3 &mdash; Sqoop and Flume as mirror images</span>
+    <table style="margin-top:6px">
+      <tr><th></th><th>Sqoop</th><th>Flume</th></tr>
+      <tr><td>Moves</td><td>Tables</td><td>Logs</td></tr>
+      <tr><td>Unit</td><td>A MapReduce job</td><td>An agent (one JVM)</td></tr>
+      <tr><td>Three-part structure</td><td>Connect &rarr; Split &rarr; Map (no reduce)</td><td>Source &rarr; Channel &rarr; Sink</td></tr>
+      <tr><td>Its one famous number</td><td><b>4</b> default mappers</td><td><b>128 MB</b> roll size</td></tr>
+      <tr><td>Its one famous failure</td><td>Hammers the source DB with JDBC connections</td><td>Small files tax the NameNode</td></tr>
+      <tr><td>Fate</td><td>EOL <b>2021</b>, replaced by Kafka Connect</td><td>Superseded by Kafka for most use cases</td></tr>
+    </table>
+  </div>
+
+  <div class="analogy"><span class="tag">Hook 4 &mdash; Kafka's five concepts: &ldquo;T-P-O-B-Z&rdquo;, a zoom-out</span>
+    <b>T</b>opic (the whole log) &rarr; <b>P</b>artition (a slice of it, on one broker) &rarr; <b>O</b>ffset (a position in that slice) &rarr; <b>B</b>roker (the server holding it) &rarr; <b>Z</b>ooKeeper/KRaft (what coordinates the servers).<br><br>
+    Each level answers one question: <b>What category?</b> &rarr; <b>Which shard?</b> &rarr; <b>Where in it?</b> &rarr; <b>Which machine?</b> &rarr; <b>Who's in charge?</b><br><br>
+    Two rules hang off this and both are heavily examined: <b>ordering is per-partition, never global</b>, and <b>the broker assigns offsets but the consumer tracks them</b> (in <code>__consumer_offsets</code>).
+  </div>
+
+  <div class="analogy"><span class="tag">Hook 5 &mdash; Kafka throughput: &ldquo;S-Z-B-P&rdquo;, each with its number</span>
+    <table style="margin-top:6px">
+      <tr><th>Decision</th><th>The number to quote</th></tr>
+      <tr><td><b>S</b>equential disk writes</td><td>500&ndash;600 MB/s sequential vs 50&ndash;100 MB/s random</td></tr>
+      <tr><td><b>Z</b>ero-copy transfer</td><td><code>sendfile()</code> &mdash; 4 copies / 2 switches &rarr; 2 copies / 0 switches</td></tr>
+      <tr><td><b>B</b>atch compression</td><td>5&ndash;10&times; on structured log data (Snappy, LZ4, Zstandard, GZIP)</td></tr>
+      <tr><td><b>P</b>artition parallelism</td><td>Linear in P &mdash; 1&rarr;32 partitions approaches 32&times;</td></tr>
+    </table>
+    <p style="margin:9px 0 0">Headline result they all add up to: <b>505,000 messages/sec &mdash; 11&times; ActiveMQ, 3.4&times; RabbitMQ</b> (Kreps et al., 2011).</p>
+  </div>
+
+  <div class="analogy"><span class="tag">Hook 6 &mdash; the two ladders: versions and years</span>
+    Almost every date question in this chapter is one of these. Both run in ascending order, which is the trick that makes them stick.
+    <table style="margin-top:6px">
+      <tr><th>Kafka version ladder</th><th>What it introduced</th></tr>
+      <tr><td><b>0.11</b></td><td>Exactly-once &mdash; idempotent producer + transactional API</td></tr>
+      <tr><td><b>2.4+</b></td><td>Cooperative incremental rebalancing</td></tr>
+      <tr><td><b>3.0</b></td><td>KRaft &mdash; ZooKeeper removed</td></tr>
+    </table>
+    <table style="margin-top:8px">
+      <tr><th>Year ladder</th><th>Event</th></tr>
+      <tr><td><b>2010&ndash;2011</b></td><td>Kafka built at LinkedIn (Kreps, Narkhede, Rao); Kreps et al. benchmark paper</td></tr>
+      <tr><td><b>2012</b></td><td>Open-sourced to the Apache Software Foundation</td></tr>
+      <tr><td><b>2013</b></td><td>Kreps publishes <i>The Log</i> (LinkedIn Engineering) &mdash; the chapter epigraph</td></tr>
+      <tr><td><b>2017</b></td><td>Kafka 0.11 &mdash; exactly-once semantics</td></tr>
+      <tr><td><b>2021</b></td><td>Apache Sqoop reaches End of Life</td></tr>
+    </table>
+  </div>
+
+  <div class="tip"><span class="tag">The number wall &mdash; last thing to read before you walk in</span>
+    <b>8.1:</b> N(N&minus;1)/2 &middot; 50 systems &rarr; 1,225 jobs &middot; N=4 &rarr; 6 links &middot; bus = 2N<br>
+    <b>8.2 Sqoop:</b> 4 mappers &middot; 0 reducers &middot; EOL 2021<br>
+    <b>8.2 Flume:</b> 3 components &middot; 300&ndash;600 s &middot; 128 MB = 134217728 &middot; 20 edge &rarr; 2 collectors<br>
+    <b>8.3 Kafka:</b> 5 concepts &middot; 4 record fields &middot; RF 3 &rarr; tolerates 2 &middot; 7-day retention &middot; 505,000 msg/s &middot; 11&times; / 3.4&times; &middot; 500&ndash;600 vs 50&ndash;100 MB/s &middot; 4/2 &rarr; 2/0 &middot; 5&ndash;10&times; compression &middot; 16 KB batch, 5 ms linger &middot; Netflix 4,000 topics / 400 services
+  </div>
+</section>
+
+<!-- ============================ TRAPS ============================ -->
+<section id="traps">
+  <h2><span class="kicker">Before you walk in</span>The traps that actually cost marks</h2>
+
+  <div class="confusion"><span class="tag">1. O(N&sup2;) is the count of connections, not of systems</span>
+    N systems, up to <b>N(N&minus;1)/2</b> connections. The event bus is <b>2N</b> connections &mdash; not N. Both publish and subscribe count.
+  </div>
+
+  <div class="confusion"><span class="tag">2. Sqoop has no Reduce phase</span>
+    It is a <b>map-only</b> MapReduce job. Default mappers <b>4</b>, not 1 and not 8. Eight was just the number in the sample command.
+  </div>
+
+  <div class="confusion"><span class="tag">3. Memory Channel is fast, File Channel is durable</span>
+    Do not swap them. In the fan-in topology the <b>edge</b> agents use Memory Channel and the <b>collector</b> agents use File Channel &mdash; durability is bought once, at the collector tier.
+  </div>
+
+  <div class="confusion"><span class="tag">4. Kafka offsets are per-partition</span>
+    Not per-topic, not global. Ordering is guaranteed <b>within a partition</b> only. Same key &rarr; same partition is what buys you per-key ordering.
+  </div>
+
+  <div class="confusion"><span class="tag">5. The broker does not track consumer progress</span>
+    Consumers track their own offsets, stored in the <code>__consumer_offsets</code> topic. That statelessness is why replay is cheap.
+  </div>
+
+  <div class="confusion"><span class="tag">6. Consuming does not delete</span>
+    Kafka deletes by <b>retention policy</b> (time or size), never on acknowledgement. That is the single biggest difference from ActiveMQ / RabbitMQ.
+  </div>
+
+  <div class="confusion"><span class="tag">7. Zero-copy removes the user-space copy, it does not remove all copies</span>
+    4 copies / 2 context switches &rarr; <b>2 copies / 0 context switches</b> via <code>sendfile()</code>. Not "zero copies".
+  </div>
+
+  <div class="confusion"><span class="tag">8. R = 3 tolerates 2 failures</span>
+    Replication factor R tolerates <b>R&minus;1</b> simultaneous broker failures. Default R = 3 &rarr; 2 failures.
+  </div>
+</section>
+
+<!-- ============================ CHECKLIST ============================ -->
+<section id="checklist">
+  <h2><span class="kicker">Final pass</span>Exam checklist</h2>
+  <p>Tick each only when you can say it out loud without looking.</p>
+  <ul class="checklist">
+    <li>Expand ETL, and state the formula N(N&minus;1)/2 with the 50-system &rarr; 1,225-job example.</li>
+    <li>Name all four point-to-point problems: brittleness, no replay, high latency, tight coupling.</li>
+    <li>Explain why an event bus is 2N connections and what "adding a consumer needs zero producer changes" means.</li>
+    <li>Fill in Table 8.1 from memory: five tools, direction, type, use case.</li>
+    <li>Expand Sqoop, state its execution engine, its default mapper count, and that it has no Reduce phase.</li>
+    <li>Describe the four steps of a Sqoop import and how the key range is split.</li>
+    <li>Name both incremental modes and the two flags that drive them.</li>
+    <li>Give three reasons Sqoop is retired, plus its EOL year and its replacement.</li>
+    <li>Draw Source &rarr; Channel &rarr; Sink and list the types of each.</li>
+    <li>Contrast Memory Channel and File Channel, and say which tier uses which in the fan-in design.</li>
+    <li>Explain the small-file problem and quote the 300&ndash;600 s / 128 MB best practice.</li>
+    <li>Name Kafka's three creators, its origin company and year, and its Apache year.</li>
+    <li>State the one-sentence difference between a traditional queue and Kafka's log.</li>
+    <li>List the four fields of a Kafka record and say who assigns the offset.</li>
+    <li>Define all five architecture concepts, including what KRaft replaced and in which version.</li>
+    <li>State the partition-to-consumer rule and what happens beyond P consumers.</li>
+    <li>Give all four throughput decisions with their numbers.</li>
+    <li>Name the zero-copy system call and the copy / context-switch counts on both sides.</li>
+    <li>State the default retention period and what happens to a consumer slower than it.</li>
+    <li>Name both exactly-once mechanisms, the version that introduced them, and the consumer-side setting.</li>
+  </ul>
+</section>
+
+<footer>
+  BDA Chapter 8 (8.1&ndash;8.3) &mdash; Data Pipelines, Data Lakes and Real-Time Integration.<br>
+  Built from <i>Data Engineering: Distributed Systems, Scalable Processing, and Modern Architectures</i> by Rokan Uddin Faruqui (University of Chittagong, 1st ed. 2026), CC BY 4.0. Diagrams original.
+</footer>
+</div>
+
+<button id="toTop" title="Back to top">&uarr;</button>
+
+<script>
+/* ---------------- question bank ---------------- */
+const QS = [
+/* ===================== 8.1 ===================== */
+{s:"8.1",q:"ETL stands for:",o:["Extract, Transform, Load","Export, Transfer, Link","Evaluate, Test, Launch","Extract, Transfer, Log"],a:0,
+ e:"<b>E</b>xtract from a source system &rarr; <b>T</b>ransform into the target schema &rarr; <b>L</b>oad into a destination, typically a data warehouse. This was the standard approach <b>for two decades</b>. Each job has one defined source, one transformation, one target &mdash; easy to reason about, which is exactly why it spread. <b>Memory hook:</b> the order is the order of the letters, and the destination is always the warehouse."},
+{s:"8.1",q:"In a point-to-point ETL architecture with N systems, the worst-case number of direct connections is:",o:["N(N&minus;1)/2","2N","N log N","N&minus;1"],a:0,
+ e:"Every <i>pair</i> of systems that exchanges data needs its own dedicated ETL job, so you count pairs: <b>N(N&minus;1)/2 = O(N&sup2;)</b>.<br><b>The distractor to know:</b> <b>2N</b> is the <i>event bus</i> figure, not the point-to-point one. <b>Memory hook:</b> handshakes in a room &mdash; everyone shakes everyone else's hand once."},
+{s:"8.1",q:"A bank with 50 operational systems may require how many separate ETL jobs?",o:["1,225","2,500","100","500"],a:0,
+ e:"<b>50 &times; 49 / 2 = 1,225.</b> The textbook lists the systems: core banking, CRM, risk management, fraud detection, mobile wallet, settlement, audit, compliance. This exact worked number is the one the book prints, so it is the one an exam will use. <b>Distractor:</b> 2,500 = 50&sup2;, which forgets both the &minus;1 and the /2."},
+{s:"8.1",q:"The integration complexity of point-to-point ETL is:",o:["O(N&sup2;)","O(N)","O(log N)","O(1)"],a:0,
+ e:"N(N&minus;1)/2 expands to (N&sup2;&minus;N)/2, which grows quadratically &rarr; <b>O(N&sup2;)</b>. The whole argument of section 8.1 is the reduction <b>O(N&sup2;) &rarr; O(N)</b> achieved by a central event bus. <b>Memory hook:</b> two N's in the problem, one N in the cure."},
+{s:"8.1",q:"With a central event bus, the total number of connections for N systems is:",o:["2N, giving O(N)","N&sup2;, giving O(N&sup2;)","N, giving O(N)","N/2, giving O(N)"],a:0,
+ e:"<b>2N</b> &mdash; each system makes <b>one publish connection and one subscribe connection</b>. Producers write events to named topics; consumers subscribe to the topics they care about.<br><b>The trap is plain N.</b> Both directions count, so it is 2N, even though the complexity class is still O(N)."},
+{s:"8.1",q:"Which is NOT one of the four problems the textbook attributes to point-to-point ETL?",o:["Excessive disk consumption on the warehouse","Brittleness","No replay","Tight coupling"],a:0,
+ e:"The four named problems are <b>Brittleness, No replay, High latency, Tight coupling</b> &mdash; and the fourth one, high latency, is the one people forget when listing them. Disk consumption is never mentioned.<br><b>Memory hook: B-N-H-T</b> &mdash; &ldquo;<b>B</b>ig <b>N</b>asty <b>H</b>eadache <b>T</b>oday.&rdquo;"},
+{s:"8.1",q:"&ldquo;Brittleness&rdquo; in point-to-point ETL specifically means:",o:["A schema change in one source forces every ETL job reading from it to be updated simultaneously","Jobs crash when the network is slow","Data is lost when the queue overflows","The warehouse cannot handle concurrent writes"],a:0,
+ e:"When the schema of source system A changes, <b>every</b> ETL job that reads from A must be updated <b>simultaneously</b>. The textbook's phrase: &ldquo;a column rename cascades into a <b>multi-day incident</b>.&rdquo; <b>Memory hook:</b> brittle = one crack spreads through the whole pane at once."},
+{s:"8.1",q:"Why does traditional ETL have &ldquo;no replay&rdquo;?",o:["Jobs delete data from the source queue after consumption, so data is lost if a downstream system was offline","Offsets are not stored anywhere","The warehouse overwrites old partitions","Replay was never part of the SQL standard"],a:0,
+ e:"Consumption is <b>destructive</b>: the ETL job deletes data from the source queue once it has read it. If a downstream system is offline when the job runs, the data is gone <b>unless the job is re-run from scratch</b>. This is precisely the problem Kafka's retained log solves in 8.3 &mdash; connect the two sections in your head."},
+{s:"8.1",q:"Because all traditional ETL jobs are scheduled nightly or hourly, which capability is described as &ldquo;architecturally impossible&rdquo;?",o:["Real-time fraud detection, live dashboards and event-driven personalisation","Nightly reporting","Schema migration","Data compression"],a:0,
+ e:"Problem #3 is <b>high latency</b>: jobs run nightly, <b>hourly at best</b>. The book's exact phrasing is that those three use cases are <b>architecturally impossible</b> in this model &mdash; not merely slow, structurally unavailable. <b>Memory hook:</b> all three named use cases are the ones you'd advertise as &ldquo;real-time&rdquo;."},
+{s:"8.1",q:"Under tight coupling, adding a new consumer of an existing source requires:",o:["Modifying or duplicating the source-side ETL job","Nothing &mdash; consumers are independent","Re-partitioning the warehouse","Restarting the source database"],a:0,
+ e:"Source and consumer are bound together, so the <b>producer side</b> must change to serve a new reader. Hold this directly against the event bus, where adding a consumer requires <b>zero changes to any producer</b> &mdash; that contrast is the single most quotable line in 8.1."},
+{s:"8.1",q:"With a central event bus, adding a new consumer requires:",o:["Zero changes to any producer","A new topic per consumer","One code change in each producer","Re-hashing all existing partitions"],a:0,
+ e:"This decoupling is the entire point of the bus and the book states it as an absolute: <b>zero changes to any producer</b>. Each of the N systems connects to the bus once; producers write to named topics, consumers subscribe to what they need. <b>Memory hook:</b> the bus is a noticeboard &mdash; a new reader does not make the writer rewrite the notice."},
+{s:"8.1",q:"In Figure 8.1, with N = 4 systems, how many point-to-point connections are needed?",o:["6","8","4","12"],a:0,
+ e:"<b>4 &times; 3 / 2 = 6</b> direct connections (labelled &ldquo;fragile, no replay&rdquo; in the figure). The event bus side of the same figure needs <b>2N = 8</b> connections but is <b>decoupled and replayable</b>. Note the sting: at N = 4 the bus actually uses <i>more</i> links &mdash; the win only appears as N grows, because 6 is quadratic and 8 is linear."},
+{s:"8.1",q:"Apache Sqoop's data direction and type are:",o:["RDBMS &harr; HDFS, batch","Logs &rarr; HDFS, micro-batch","Any &rarr; Any, real-time stream","Kafka &rarr; HDFS, stream processing"],a:0,
+ e:"Row 1 of Table 8.1. Direction is <b>bidirectional</b> (&harr;), type <b>Batch</b>, use case <b>nightly bulk transfer of relational tables</b>. The other three options are, in order, Flume, Kafka and Spark Streaming. <b>Memory hook from the book's rule of thumb:</b> Sqoop = bulk DB sync."},
+{s:"8.1",q:"Apache Flume's primary use case in Table 8.1 is:",o:["Web server log ingestion and multi-source aggregation","Nightly relational table transfer","Centralised event bus for fraud and clickstream","No-code data routing from IoT edge to cloud"],a:0,
+ e:"Direction <b>Logs &rarr; HDFS</b> (one-way), type <b>Batch / micro-batch</b>. &ldquo;Multi-source aggregation&rdquo; is the fan-in topology of 8.2.2. The distractors are Sqoop, Kafka and NiFi respectively. <b>Memory hook:</b> Flume = log collection, and a flume is literally a channel that logs float down."},
+{s:"8.1",q:"Which tool is described as &ldquo;Any &rarr; Any, real-time stream&rdquo; with a centralised event bus use case?",o:["Apache Kafka","Apache NiFi","Spark Streaming","Apache Sqoop"],a:0,
+ e:"Kafka: direction <b>Any &rarr; Any</b>, type <b>Real-time stream</b>, use case <b>centralised event bus &mdash; fraud, clickstream, IoT</b>.<br><b>Careful:</b> NiFi is <i>also</i> Any &rarr; Any, but its type is <b>Visual pipeline</b> for no-code routing, IoT edge to cloud. Direction alone does not separate them &mdash; the <i>type</i> column does."},
+{s:"8.1",q:"Spark Streaming's row in the tool landscape lists its primary use case as:",o:["Stateful aggregation, enrichment and stream joins","Bulk table export to MySQL","Tailing log files into HDFS","Visual drag-and-drop routing"],a:0,
+ e:"Direction <b>Kafka &rarr; HDFS/DB</b>, type <b>Stream processing</b>. Note what this implies: Spark Streaming <b>consumes from</b> the bus rather than <b>being</b> the bus. The book's closing rule of thumb is worth memorising whole: <b>Sqoop = bulk DB sync, Flume = log collection, Kafka = real-time events, NiFi = visual routing, Spark Streaming = stream processing.</b>"},
+{s:"8.1",q:"According to Table 8.1, the correct tool choice depends on three things:",o:["Data direction, latency requirement and operational complexity budget","Cluster size, disk type and network speed","Team size, budget and vendor support","Schema format, compression codec and file size"],a:0,
+ e:"The book states plainly that <b>no single tool is optimal for all scenarios</b>, and names exactly these three axes. Expect this as a short-answer question as well as an MCQ. <b>Memory hook: D-L-O</b> &mdash; <b>D</b>irection, <b>L</b>atency, <b>O</b>perational complexity."},
+
+/* ===================== 8.2 ===================== */
+{s:"8.2",q:"Sqoop is an abbreviation of:",o:["SQL-to-Hadoop","Sequential Query Operations","Scalable Queue Operations Protocol","Structured Query Output Pipeline"],a:0,
+ e:"<b>SQ</b>L-to-Had<b>OOP</b> &mdash; the name is literally the two endpoints stitched together. It is a <b>command-line tool</b> moving data between any <b>JDBC-compliant</b> store (MySQL, Oracle, PostgreSQL, SQL Server) and <b>HDFS, Hive or HBase</b>. Note all three Hadoop-side targets; the exam may name Hive or HBase rather than HDFS."},
+{s:"8.2",q:"Sqoop's core design insight is to:",o:["Convert a table scan into a MapReduce job where each Map task reads a non-overlapping row range in parallel","Stream rows through a Kafka topic","Replicate the database binlog to HDFS","Compress the table and copy it as one file"],a:0,
+ e:"The book calls it &ldquo;deceptively simple&rdquo;: turn a table scan into a <b>MapReduce job</b>, each Map task reading a <b>non-overlapping range of rows</b> over <b>its own JDBC connection</b>. Two consequences follow and both are examinable: parallelism comes from the key-range split, and the per-mapper JDBC connection is exactly what later gets Sqoop retired for hammering the source database."},
+{s:"8.2",q:"The default number of mappers in a Sqoop import is:",o:["4","1","8","16"],a:0,
+ e:"<b>m = 4 by default.</b> The sample command in Listing 8.1 overrides it to 8 with <code>--num-mappers 8</code>, and the incremental example uses 4 &mdash; so <b>8 is the designed distractor</b>. If a question shows you the listing and then asks for the default, the answer is still 4."},
+{s:"8.2",q:"How many Reduce tasks does a Sqoop import job run?",o:["None &mdash; it is map-only","One","One per mapper","Four by default"],a:0,
+ e:"Step 4 of the import pipeline states it outright: <b>there is no Reduce phase</b>. Each mapper writes an <b>independent part file</b> and HDFS assembles them into the output directory. <b>Memory hook:</b> nothing needs merging, because the key ranges never overlap &mdash; no overlap, no reduce."},
+{s:"8.2",q:"Sqoop divides work among m mappers by:",o:["Splitting the primary-key range into m equal-width sub-ranges","Splitting the table by file block","Giving each mapper every m-th row","Hashing each row's contents"],a:0,
+ e:"Mapper <i>i</i> reads rows where k &isin; [k<sub>min</sub> + (i&minus;1)&middot;&delta;, k<sub>min</sub> + i&middot;&delta;). Sqoop learns k<sub>min</sub> and k<sub>max</sub> in <b>step 1</b>, when it connects over JDBC and queries table metadata &mdash; column names, types, and the <b>primary-key range</b>. <b>Equal-width, not equal-count</b>: a skewed key distribution therefore gives unbalanced mappers."},
+{s:"8.2",q:"Which is NOT a Sqoop output format listed in the text?",o:["ORC","Parquet","Avro","SequenceFile"],a:0,
+ e:"The four listed are <b>CSV, Avro, Parquet and SequenceFile</b>. ORC is a genuine Hadoop columnar format but the book does not list it here, so in an MCQ it is the odd one out. <b>Memory hook: C-A-P-S</b> &mdash; CSV, Avro, Parquet, SequenceFile."},
+{s:"8.2",q:"The two Sqoop incremental import modes are:",o:["append and lastmodified","insert and update","full and delta","merge and overwrite"],a:0,
+ e:"<b>append</b> &mdash; new rows, identified by a value <b>greater than the checkpoint</b>. <b>lastmodified</b> &mdash; rows whose <b>modification timestamp exceeds the checkpoint</b>. <b>Memory hook:</b> append is for insert-only tables; lastmodified is for tables where rows get edited."},
+{s:"8.2",q:"In an incremental import, <code>--check-column</code> must be:",o:["A monotonically increasing column","The table's largest column","A foreign key","A partition column in Hive"],a:0,
+ e:"It must increase monotonically so Sqoop can compare it against <code>--last-value</code>, the checkpoint from the previous run. In Listing 8.1 the pair is <code>--check-column txn_timestamp</code> with <code>--last-value '2024-06-11 23:59:59'</code>, alongside <code>--incremental append</code>. Learn the three flags as a set: <b>mode, column, checkpoint</b>."},
+{s:"8.2",q:"Sqoop stores the new checkpoint after an incremental run in:",o:["A saved job","The HDFS target directory","A ZooKeeper znode","The Hive metastore"],a:0,
+ e:"The <b>saved job</b> holds the new <code>--last-value</code>, so &ldquo;the next run picks up where the previous left off&rdquo; without the user tracking it by hand. Without a saved job you would have to pass the checkpoint manually every night."},
+{s:"8.2",q:"<code>sqoop export</code> moves data:",o:["From HDFS into a relational database","From a relational database into HDFS","Between two HDFS clusters","From Kafka into HDFS"],a:0,
+ e:"The book's worked scenario: a <b>Spark batch job produces a summary table on HDFS</b>, and Sqoop exports it back to a <b>MySQL reporting database</b> for a <b>business intelligence tool</b> to query. Listing 8.2 adds <code>--update-mode allowinsert</code> and <code>--update-key summary_date,region</code> &mdash; an upsert keyed on two columns."},
+{s:"8.2",q:"Sqoop reached End of Life in:",o:["2021","2017","2012","2024"],a:0,
+ e:"<b>2021</b> &mdash; no further Apache releases, though it &ldquo;remains in production at many Hadoop-era deployments&rdquo;. <b>Do not confuse the years in this chapter:</b> 2012 = Kafka open-sourced to Apache, 2017 = Kafka 0.11 exactly-once, 2021 = Sqoop EOL."},
+{s:"8.2",q:"In modern data platforms, what has replaced Sqoop for most use cases?",o:["Kafka Connect with a JDBC source connector","Apache NiFi","Spark Streaming","Apache Flume"],a:0,
+ e:"<b>Kafka Connect + JDBC source connector.</b> The book gives three reasons it wins: it supports <b>streaming incremental ingestion via CDC</b> (change data capture), it <b>requires no MapReduce infrastructure</b>, and it <b>integrates with Kafka's replay semantics</b>. Memorise those three &mdash; they are a ready-made short answer."},
+{s:"8.2",q:"Which is a stated reason Sqoop is being retired?",o:["Its JDBC-per-mapper approach hammers the source database with concurrent connections","It cannot write Parquet","It has no incremental mode","It requires a Schema Registry"],a:0,
+ e:"Concurrent JDBC connections &ldquo;often require a <b>dedicated read replica</b>&rdquo;. The other stated reason: its <b>MapReduce dependency</b> makes it incompatible with <b>YARN-free deployments</b> and <b>cloud-native object stores</b>, where MapReduce locality is irrelevant. Two reasons, one consequence &mdash; EOL 2021."},
+{s:"8.2",q:"The three components of a Flume agent are:",o:["Source, Channel, Sink","Producer, Broker, Consumer","Mapper, Combiner, Reducer","Collector, Buffer, Writer"],a:0,
+ e:"A Flume <b>agent</b> is a single <b>JVM process</b> containing three components forming a <b>directed pipeline</b>: events flow <b>Source &rarr; Channel &rarr; Sink</b>. <b>Memory hook: S-C-S</b>, and the middle one is the buffer &mdash; in, hold, out."},
+{s:"8.2",q:"Which Flume channel is fast but non-durable?",o:["Memory Channel","File Channel","Avro Channel","Kafka Channel"],a:0,
+ e:"<b>Memory Channel</b> = fast, <b>non-durable</b>, loses buffered events on agent restart. <b>File Channel</b> = writes to <b>local disk</b>, <b>survives agent restart</b>, <b>at the cost of throughput</b>. The exam will test this as a straight trade-off, and the fan-in design note then tests <i>where</i> you put each one."},
+{s:"8.2",q:"Which four Source types does the text list for a Flume agent?",o:["Exec, Syslog, Avro, HTTP","Exec, JDBC, Kafka, HTTP","Syslog, HDFS, HBase, Avro","Tail, Netcat, Thrift, REST"],a:0,
+ e:"<b>Exec</b> (runs <code>tail -F logfile</code>), <b>Syslog</b> (UDP/TCP syslog), <b>Avro</b> (from another Flume agent &mdash; this is what makes chaining possible), and <b>HTTP</b> (REST push). Do not mix these with the <b>Sink</b> types, which are <b>HDFS, Kafka and HBase</b>."},
+{s:"8.2",q:"A Flume Exec source is typically configured with the command:",o:["tail -F /var/log/nginx/access.log","cat access.log","hdfs dfs -get","curl -X POST"],a:0,
+ e:"Exec source runs an external command and reads its stdout; <code>tail -F</code> follows the file and survives log rotation (capital F, unlike <code>-f</code>). In Listing 8.3 it is paired with a <b>File Channel</b> and an <b>HDFS Sink</b> writing to <code>hdfs://namenode:9000/logs/%Y/%m/%d</code> &mdash; note the date-partitioned path."},
+{s:"8.2",q:"The purpose of the Flume channel is to:",o:["Decouple source read speed from sink write speed, absorbing bursts","Compress events before writing","Route events to multiple topics","Authenticate the source"],a:0,
+ e:"It is a <b>buffer</b> between the two ends, so a fast source cannot overwhelm a slow sink, and a traffic burst is absorbed rather than dropped. <b>Memory hook:</b> the channel is the shock absorber &mdash; and choosing Memory versus File is choosing whether that shock absorber survives a restart."},
+{s:"8.2",q:"Why is a very short Flume roll interval harmful?",o:["Each small file consumes a NameNode metadata entry and degrades NameNode heap","It overloads the DataNode network card","It makes the Avro schema invalid","It forces a full MapReduce recompile"],a:0,
+ e:"The book's &ldquo;<b>small files and the HDFS namespace tax</b>&rdquo; misconception box: a 10-second roll interval produces <b>thousands of small files per day</b>, each taking a <b>NameNode metadata entry</b> and <b>degrading NameNode heap</b>. The cost is on the <b>NameNode</b>, not the DataNodes &mdash; that distinction is the point of the question."},
+{s:"8.2",q:"The recommended Flume HDFS Sink roll interval and roll size are:",o:["300&ndash;600 seconds and 128 MB","10 seconds and 1 MB","1 hour and 1 GB","60 seconds and 64 MB"],a:0,
+ e:"<b>300&ndash;600 seconds</b> and <b>128 MB</b> &mdash; chosen so each rolled file is <b>exactly one HDFS block</b>. Listing 8.3 shows the concrete values: <code>rollInterval = 300</code> and <code>rollSize = 134217728</code>. <b>Memory hook:</b> five to ten minutes, one block."},
+{s:"8.2",q:"<code>agent.sinks.hdfs_sink.hdfs.rollSize = 134217728</code> corresponds to:",o:["128 MB","64 MB","256 MB","1 GB"],a:0,
+ e:"134,217,728 = 128 &times; 1024 &times; 1024 = <b>128 MB</b>, which is <b>one HDFS block</b> &mdash; the whole reason that number was chosen. Worth recognising on sight, since the config listing prints the raw byte count rather than &ldquo;128 MB&rdquo;."},
+{s:"8.2",q:"Besides a Flume roll-policy fix, what else can solve the small-file problem?",o:["A downstream compaction job in Spark or Hive that merges small files nightly","Increasing the NameNode port range","Switching the channel to memory","Disabling HDFS replication"],a:0,
+ e:"The book names both remedies: tune the roll policy, <b>or</b> run a nightly <b>compaction job</b> &mdash; Spark, or Hive <code>INSERT OVERWRITE &hellip; SELECT &hellip;</code> &mdash; merging small files into <b>large Parquet files</b>. Give both in a short answer; one alone is a half mark."},
+{s:"8.2",q:"In the two-tier Flume fan-in example for 20 application servers, the collector tier consists of:",o:["2 collector agents, each receiving from 10 edge agents","20 collectors, one per server","1 collector receiving from all 20","5 collectors, each receiving from 4"],a:0,
+ e:"<b>Tier 1:</b> 20 edge agents (one per server) &mdash; Exec or Syslog source &rarr; <b>Memory Channel</b> &rarr; <b>Avro Sink</b>. <b>Tier 2:</b> 2 collector agents &mdash; <b>Avro Source</b> (each receiving from 10 edge agents) &rarr; <b>File Channel</b> &rarr; <b>HDFS Sink</b>. Learn the channel placement: <b>Memory at the edge, File at the collector</b>."},
+{s:"8.2",q:"The two benefits the Flume collector tier provides are:",o:["Durability (File Channel survives restart) and aggregation (20 writers become 2)","Compression and encryption","Schema validation and deduplication","Load balancing and caching"],a:0,
+ e:"<b>Durability</b> &mdash; the File Channel survives collector restart. <b>Aggregation</b> &mdash; reducing 20 HDFS writers to 2 &ldquo;greatly reducing small-file pressure&rdquo;, which links this design note straight back to the namespace-tax box. One more examinable detail: the whole topology is declared in <b>configuration files &mdash; no code is required</b>."},
+{s:"8.2",q:"Which statement about building a Flume fan-in topology is correct?",o:["It is specified entirely in the agent configuration files &mdash; no code is required","It requires a custom Java Source class per server","It requires a MapReduce job to merge the streams","It can only be built with the Kafka Sink"],a:0,
+ e:"The System Design Note ends on exactly this: &ldquo;This fan-in topology is specified entirely in the Flume agent configuration files&mdash;<b>no code is required</b>.&rdquo; Chaining works because one agent's <b>Avro Sink</b> feeds the next agent's <b>Avro Source</b> &mdash; that pairing is what makes multi-tier Flume possible."},
+
+/* ===================== 8.3 ===================== */
+{s:"8.3",q:"Apache Kafka was created by:",o:["Jay Kreps, Neha Narkhede and Jun Rao","Doug Cutting and Mike Cafarella","Matei Zaharia","Jeff Dean and Sanjay Ghemawat"],a:0,
+ e:"Three names, at <b>LinkedIn in 2010&ndash;2011</b>, to solve <b>the N&sup2; integration problem in LinkedIn's rapidly growing activity data pipeline</b> &mdash; note that Kafka's origin story is literally section 8.1's problem. The distractors are the other big-systems authors: <b>Cutting &amp; Cafarella</b> = Hadoop, <b>Zaharia</b> = Spark, <b>Dean &amp; Ghemawat</b> = MapReduce/GFS."},
+{s:"8.3",q:"Kafka was open-sourced to the Apache Software Foundation in:",o:["2012","2010","2011","2017"],a:0,
+ e:"Built at LinkedIn <b>2010&ndash;2011</b>, open-sourced to Apache in <b>2012</b>, and &ldquo;has since become the dominant event streaming platform in the industry&rdquo;. <b>Year ladder for this chapter:</b> 2010&ndash;11 built &rarr; 2012 Apache &rarr; 2013 Kreps' log essay &rarr; 2017 exactly-once &rarr; 2021 Sqoop EOL."},
+{s:"8.3",q:"The essential difference between a traditional message queue and Kafka is that Kafka:",o:["Retains messages for a configurable period regardless of whether they were consumed","Deletes messages faster","Requires consumers to acknowledge every message","Stores messages only in memory"],a:0,
+ e:"Traditional queues (<b>ActiveMQ, RabbitMQ</b>) model messages as <b>transient objects</b>: once a consumer acknowledges receipt, the message is <b>deleted</b>. Kafka models them as records in a <b>durable, immutable, ordered log</b>, retained <b>regardless of consumption</b>, and any consumer can read them at any time <b>by specifying an offset</b>. Those three adjectives &mdash; durable, immutable, ordered &mdash; are worth quoting verbatim."},
+{s:"8.3",q:"In the computer-science sense used here, a log is:",o:["An append-only, totally ordered sequence of records","A text file of error messages","A circular in-memory buffer","A compressed archive of events"],a:0,
+ e:"&ldquo;The simplest possible storage abstraction: an <b>append-only, totally ordered sequence of records</b>.&rdquo; The book's supporting argument: <b>every database transaction log, every write-ahead log, every filesystem journal</b> is a log in this sense. Kafka's insight is that the abstraction databases use for <b>durability</b> can be the backbone of an <b>entire distributed data infrastructure</b>."},
+{s:"8.3",q:"Which is NOT one of the four fields of a Kafka record?",o:["Partition number","Key","Value","Offset"],a:0,
+ e:"The four are <b>Key (optional), Value, Timestamp, Offset</b>. The partition is <i>where the record lives</i> &mdash; derived from the key by hashing &mdash; not a field carried in the record. <b>Memory hook: K-V-T-O.</b> Key chooses the partition, Value is the payload, Timestamp is event time, Offset is the position."},
+{s:"8.3",q:"The key of a Kafka record is used to:",o:["Determine partition assignment, so records with the same key preserve their order","Encrypt the payload","Set the retention period","Identify the consumer group"],a:0,
+ e:"The key is an <b>optional byte array</b> used for <b>partition assignment</b>: all records with the same key go to the same partition, <b>preserving key-level ordering</b>. The worked payoff appears twice in the chapter &mdash; &ldquo;a given customer's transactions are always read in order&rdquo;, and in Listing 8.4 where <code>key=str(sender)</code> keeps one sender's transactions in send-order."},
+{s:"8.3",q:"A Kafka offset is assigned by:",o:["The broker","The producer","The consumer","ZooKeeper"],a:0,
+ e:"The <b>broker</b> assigns a <b>monotonically increasing integer</b> that <b>uniquely identifies the record within its partition</b>. Note the division of labour that runs through all of 8.3: <b>the broker assigns offsets, the consumer tracks them.</b> Mixing up those two roles is the most common mistake in this section."},
+{s:"8.3",q:"Kafka offsets are unique:",o:["Within a partition only","Across the whole topic","Across the whole cluster","Across a consumer group"],a:0,
+ e:"Offsets are <b>dense and ordered within a partition</b> and the book says explicitly they are <b>not globally unique across partitions</b>. Every partition has its own offset 0, 1, 2&hellip; The direct consequence: <b>ordering is guaranteed per-partition, never across a topic</b> &mdash; which is exactly why key-based routing matters."},
+{s:"8.3",q:"A Kafka topic is best described as:",o:["A named, durable, append-only log for a category of events","A queue that empties as consumers read","A directory in HDFS","A consumer group identifier"],a:0,
+ e:"&ldquo;Analogous to database tables <b>but append-only</b>.&rdquo; Producers write to a topic; consumers read from it. The book's three examples are worth remembering because they show the granularity intended: <code>payment-events</code>, <code>rideshare-gps-pings</code>, <code>city-weather-sensors</code> &mdash; one topic per <b>category of event</b>."},
+{s:"8.3",q:"The two things partitions provide are:",o:["Parallelism and key-based ordering","Compression and encryption","Durability and deduplication","Caching and indexing"],a:0,
+ e:"<b>Parallelism</b> &mdash; multiple producers write to different partitions simultaneously, and multiple consumers in a group each process a distinct partition. <b>Key-based ordering</b> &mdash; all messages with the same key are routed to the same partition via key hashing. A topic is split into <b>P &ge; 1</b> partitions; note P can be 1, in which case you keep ordering but lose parallelism."},
+{s:"8.3",q:"A single Kafka partition resides on:",o:["A single broker","All brokers simultaneously","The consumer's local disk","ZooKeeper"],a:0,
+ e:"&ldquo;A partition is an <b>independent ordered log residing on a single broker</b>.&rdquo; Its <b>replicas</b> live on other brokers, but the partition itself &mdash; specifically its <b>leader</b> &mdash; is on one. This is why partition count, not broker count, is the unit of parallelism."},
+{s:"8.3",q:"Which replica handles all reads and writes for a partition?",o:["The leader replica","Any in-sync replica","The follower with the lowest broker ID","Whichever replica the consumer connects to"],a:0,
+ e:"Each partition has <b>one leader replica</b> handling <b>all reads and writes</b>, and <b>R&minus;1 follower replicas</b> that <b>copy data from the leader asynchronously</b> and <b>stand in as leader on failure</b>. Figure 8.3 shows the failover: if Broker 1 fails, Broker 2 <b>promotes its P0 and P1 replicas to leaders</b>."},
+{s:"8.3",q:"Kafka's default replication factor is:",o:["3","1","2","5"],a:0,
+ e:"<b>R = 3</b>, which &ldquo;tolerates the simultaneous failure of <b>any two brokers</b> without data loss&rdquo;. Watch for a specific trap: <b>Figure 8.3 uses RF = 2</b> in its worked example (two brokers, one topic, three partitions). The figure's 2 is not the default; the default is 3."},
+{s:"8.3",q:"With replication factor R, how many simultaneous broker failures can be tolerated without data loss?",o:["R &minus; 1","R","R / 2","R + 1"],a:0,
+ e:"One copy must survive, so <b>R&minus;1</b> may fail. Default R = 3 &rarr; <b>2 failures</b>. In Figure 8.3's RF = 2 example, only <b>1</b> broker failure is survivable &mdash; and indeed the figure narrates exactly that single-broker failure."},
+{s:"8.3",q:"Figure 8.3 shows a Kafka cluster with:",o:["Two brokers, one topic, three partitions and replication factor 2","Three brokers, three topics and replication factor 3","One broker, three partitions and no replication","Two brokers, two partitions and replication factor 3"],a:0,
+ e:"Topic <code>payment-txns</code>, <b>3 partitions</b>, <b>RF = 2</b>, spread across <b>2 brokers</b>, keyed on <code>txn_id</code>, read by an <b>analytics consumer group</b>. Broker 1 leads P0 and P1; Broker 2 leads P2 and holds the P0/P1 replicas. <b>If Broker 1 fails, Broker 2 promotes P0 and P1 to leaders.</b>"},
+{s:"8.3",q:"Consumer read offsets are stored:",o:["By consumers, in a special Kafka topic named __consumer_offsets","By the broker, in per-consumer state tables","In ZooKeeper only","In the consumer's local file system"],a:0,
+ e:"The book is explicit: &ldquo;<b>the broker does not maintain per-consumer state</b>&rdquo;; offsets are <b>stored by consumers in a special Kafka topic named <code>__consumer_offsets</code></b>. That statelessness is what makes replay cheap and lets any number of independent consumer groups read the same topic without coordination."},
+{s:"8.3",q:"Kafka versions prior to 3.0 relied on which system for cluster metadata and leader election?",o:["Apache ZooKeeper","etcd","Consul","HDFS NameNode"],a:0,
+ e:"<b>Apache ZooKeeper</b> handled <b>cluster metadata and leader election</b> before Kafka 3.0. ZooKeeper/KRaft is the <b>fifth</b> of the five foundational concepts &mdash; the one candidates forget when asked to list all five."},
+{s:"8.3",q:"KRaft stands for and does what?",o:["Kafka Raft &mdash; a self-managed metadata quorum built into the brokers, removing the ZooKeeper dependency","Kafka Rapid Failover Transport &mdash; faster leader election","Kernel Raft &mdash; an OS-level replication layer","Kafka Realtime Aggregation Framework &mdash; stream joins"],a:0,
+ e:"<b>Kafka Raft</b>, introduced in <b>Kafka 3.0</b>: a <b>self-managed metadata quorum built directly into the Kafka brokers</b>, <b>removing the ZooKeeper dependency and simplifying deployment</b>. <b>Memory hook:</b> the metadata moves <i>inside</i> Kafka, so there is one system to run instead of two."},
+{s:"8.3",q:"Name the five foundational concepts of Kafka architecture, in the book's order:",o:["Topic, Partition, Offset, Broker, ZooKeeper/KRaft","Producer, Consumer, Broker, Topic, Offset","Log, Segment, Index, Replica, Leader","Topic, Queue, Message, Server, Cluster"],a:0,
+ e:"Section 8.3.2 numbers them 1&ndash;5 in exactly this order: <b>Topic &rarr; Partition &rarr; Offset &rarr; Broker &rarr; ZooKeeper/KRaft</b>. They work together to deliver <b>durability, parallelism and horizontal scalability</b>. <b>Memory hook: T-P-O-B-Z</b> &mdash; and the order is a zoom-out: one log, its slices, a position in a slice, the server holding it, the thing coordinating the servers."},
+{s:"8.3",q:"When a producer supplies no message key, the target partition is chosen by:",o:["Round-robin","Always partition 0","The broker with the most free disk","Hashing the value"],a:0,
+ e:"With a key: <code>hash(key) % P</code>. <b>Without a key: round-robin.</b> The cost of round-robin is that you give up per-key ordering &mdash; load is spread evenly but a given customer's events may land in different partitions and be read out of order."},
+{s:"8.3",q:"<code>batch.size</code> and <code>linger.ms</code> let the producer:",o:["Trade latency for throughput","Set the retention period","Control replication factor","Choose the compression codec"],a:0,
+ e:"The producer <b>batches messages in memory</b> and sends a batch to the <b>partition leader in a single network request</b>, &ldquo;<b>trading latency for throughput</b>&rdquo;. Listing 8.4 uses <code>batch_size=16384</code> (<b>16 KB</b>) and <code>linger_ms=5</code>. Larger batch or longer linger = more throughput, more delay."},
+{s:"8.3",q:"<code>acks='all'</code> in a Kafka producer means:",o:["Wait for all in-sync replicas to acknowledge","Wait for all consumers to read the message","Acknowledge every message individually to the broker","Disable acknowledgements entirely"],a:0,
+ e:"The strongest durability setting: the producer waits for <b>all in-sync replicas</b>, not all consumers. Listing 8.4 pairs it with <code>retries=5</code>, and <code>producer.flush()</code> which <b>blocks until all buffered records are sent</b>. Note <code>acks</code> is a <b>producer-side</b> setting &mdash; do not offer it as an answer to a consumer-side question."},
+{s:"8.3",q:"Kafka's partition-assignment guarantee within a consumer group is that:",o:["Each partition is assigned to exactly one consumer in the group at any time","Each consumer reads every partition","Partitions rotate among consumers every poll","Each consumer is assigned exactly one partition"],a:0,
+ e:"Read the direction carefully: <b>each partition &rarr; exactly one consumer</b>. A single consumer may hold <b>several</b> partitions, but a partition is never shared by two consumers of the same group. The fourth option reverses the mapping and is the designed trap."},
+{s:"8.3",q:"Adding consumers to a group increases parallelism up to a maximum of:",o:["P, the number of partitions","B, the number of brokers","R, the replication factor","Unbounded"],a:0,
+ e:"&ldquo;Adding consumers to a group (<b>up to P consumers</b>) increases parallelism proportionally.&rdquo; Beyond P there is nothing left to assign, so extra consumers sit idle. <b>Partition count is the parallelism ceiling</b> &mdash; which is also why 8.3.4 says throughput scales with partition count."},
+{s:"8.3",q:"A fraud-detection service and an analytics service must both receive every message on a topic. They should:",o:["Use two different consumer groups","Share one consumer group","Subscribe to two separate topics","Read from different partitions"],a:0,
+ e:"This is the book's own example. &ldquo;Each group maintains its <b>own set of offsets</b>, so <b>both applications receive every message independently</b>.&rdquo; Putting them in <i>one</i> group would <b>split</b> the partitions between them, so each would see only part of the stream &mdash; the classic wrong answer."},
+{s:"8.3",q:"A Kafka rebalance is triggered when:",o:["A consumer joins or leaves the group","Retention expires","A broker compacts a segment","The producer changes its batch size"],a:0,
+ e:"&ldquo;When a consumer joins or leaves the group, Kafka triggers a <b>rebalance</b>: partitions are reassigned among the remaining consumers.&rdquo; Modern Kafka (<b>2.4+</b>) uses <b>cooperative incremental rebalancing</b> to <b>minimise the disruption</b>, rather than stopping every consumer at once."},
+{s:"8.3",q:"Cooperative incremental rebalancing was introduced in:",o:["Kafka 2.4+","Kafka 0.11","Kafka 3.0","Kafka 1.0"],a:0,
+ e:"<b>Version ladder &mdash; memorise all three together, they are the chapter's favourite trap:</b> <b>0.11 (2017)</b> = exactly-once semantics; <b>2.4+</b> = cooperative incremental rebalancing; <b>3.0</b> = KRaft replaces ZooKeeper. Ascending version, ascending recency."},
+{s:"8.3",q:"The Kreps et al. (2011) paper reports Kafka producer throughput of:",o:["505,000 messages/sec","50,000 messages/sec","1,000,000 messages/sec","150,000 messages/sec"],a:0,
+ e:"<b>505,000 messages/sec</b> &mdash; roughly <b>11&times; ActiveMQ</b> and <b>3.4&times; RabbitMQ</b> on equivalent hardware. Learn the three numbers as one unit, since the exam may ask for any of them: <b>505,000 / 11&times; / 3.4&times;</b>."},
+{s:"8.3",q:"Kafka's reported throughput advantage over RabbitMQ is approximately:",o:["3.4&times;","11&times;","2&times;","20&times;"],a:0,
+ e:"<b>3.4&times; versus RabbitMQ</b>, <b>11&times; versus ActiveMQ</b>. Swapping the two is the easiest mark to lose in 8.3.4. <b>Memory hook:</b> the older, heavier broker (ActiveMQ) loses by the bigger multiple."},
+{s:"8.3",q:"Sequential writes on a spinning hard disk achieve roughly what speed, versus random writes?",o:["500&ndash;600 MB/s versus 50&ndash;100 MB/s","100&ndash;200 MB/s versus 10&ndash;20 MB/s","1&ndash;2 GB/s versus 500 MB/s","50&ndash;60 MB/s versus 5&ndash;10 MB/s"],a:0,
+ e:"<b>500&ndash;600 MB/s sequential</b> versus <b>50&ndash;100 MB/s random</b> &mdash; roughly a <b>10&times;</b> gap, caused by <b>seek latency</b>. Kafka &ldquo;exploits this difference fully&rdquo; because it <b>never updates messages in place</b>: partition logs are written by <b>appending to the active segment file</b>."},
+{s:"8.3",q:"Kafka's effective write speed approaches raw disk bandwidth even without SSDs because:",o:["The OS page cache prefetches the next disk blocks automatically","Messages are kept entirely in RAM","Writes are deferred until shutdown","The broker uses a RAID-0 array by default"],a:0,
+ e:"&ldquo;The OS <b>page cache prefetches the next disk blocks automatically</b>, making Kafka's effective write speed close to <b>raw disk bandwidth even without SSDs</b>.&rdquo; The page cache appears twice in 8.3.4 &mdash; here for writes, and again in the Key Insight for reads. Both times the kernel, not Kafka, is doing the work."},
+{s:"8.3",q:"Kafka's zero-copy transfer uses which Linux system call?",o:["sendfile()","mmap()","splice()","readv()"],a:0,
+ e:"<code>sendfile()</code> transfers data <b>from the kernel buffer directly to the NIC</b>, <b>bypassing the user-space copy entirely</b>. The stated benefit: it <b>halves CPU usage for read-heavy workloads</b>. The other three are real Linux calls, which is what makes them decent distractors &mdash; only <code>sendfile()</code> is the one named."},
+{s:"8.3",q:"A traditional broker's read path costs how many copies and context switches?",o:["4 copies, 2 context switches","2 copies, 0 context switches","3 copies, 1 context switch","1 copy, 1 context switch"],a:0,
+ e:"The full path: <b>disk &rarr; kernel buffer &rarr; user-space buffer &rarr; socket buffer &rarr; NIC</b> = <b>4 copies, 2 context switches</b>. Kafka's <code>sendfile()</code> path cuts out the user-space hop, giving <b>2 copies, 0 context switches</b>. Learn both halves as a pair: <b>4/2 &rarr; 2/0</b>."},
+{s:"8.3",q:"Zero-copy transfer in Kafka results in:",o:["2 copies and 0 context switches","0 copies and 0 context switches","1 copy and 1 context switch","4 copies and 0 context switches"],a:0,
+ e:"&ldquo;Zero-copy&rdquo; names the eliminated <b>user-space</b> copy, not the elimination of every copy &mdash; so <b>&ldquo;0 copies&rdquo; is the designed trap</b> and it catches people every time. The real figures: <b>2 copies, 0 context switches</b>, halving CPU on read-heavy workloads."},
+{s:"8.3",q:"Kafka batch compression works by:",o:["Compressing a batch of messages as a single unit; the broker stores it compressed without decompressing","Compressing each message individually at the broker","Decompressing at the broker then recompressing per consumer","Compressing only the message keys"],a:0,
+ e:"Producers compress <b>a batch as a single unit</b> before transmitting. <b>The broker stores the compressed batch without decompressing it</b>; <b>consumers decompress on receipt</b>. Because the broker never touches it, <b>both network and disk I/O drop proportionally</b> &mdash; that is why compressing the whole batch beats compressing messages one by one."},
+{s:"8.3",q:"Which is NOT a compression codec listed for Kafka?",o:["Brotli","Snappy","LZ4","Zstandard"],a:0,
+ e:"The four listed are <b>Snappy, LZ4, Zstandard and GZIP</b>. Brotli is a real codec but is not in the book's list. Typical ratio for <b>structured log data: 5&ndash;10&times;</b>. <b>Memory hook: S-L-Z-G.</b>"},
+{s:"8.3",q:"Increasing partitions from 1 to 32 increases end-to-end throughput by a factor:",o:["Approaching 32, bounded by broker and network capacity","Of exactly 2","Of log&#8322;32 = 5","Of 1 &mdash; partitions do not affect throughput"],a:0,
+ e:"&ldquo;Throughput scales <b>linearly</b> with partition count&rdquo;: P partitions allow <b>P parallel producer threads</b> and <b>up to P consumers in a group</b>. Going 1 &rarr; 32 raises throughput by a factor <b>approaching 32</b>, <b>bounded by broker and network capacity</b> &mdash; quote that bound, it is the part that earns the mark."},
+{s:"8.3",q:"Name the four engineering decisions behind Kafka's throughput:",o:["Sequential disk writes, zero-copy transfer, batch compression, partition parallelism","Sharding, caching, indexing, replication","In-memory storage, SSDs, RDMA, kernel bypass","Compression, encryption, batching, pipelining"],a:0,
+ e:"Section 8.3.4 numbers exactly four: <b>1. Sequential disk writes &middot; 2. Zero-copy transfer &middot; 3. Batch compression &middot; 4. Partition parallelism.</b> <b>Memory hook: S-Z-B-P.</b> Each has its own number attached &mdash; 500&ndash;600 MB/s, <code>sendfile()</code> 4/2&rarr;2/0, 5&ndash;10&times;, and linear-in-P."},
+{s:"8.3",q:"The Key Insight box argues that for Kafka's access pattern, disk beats memory. This holds for:",o:["Sequential access only","Random access only","Both sequential and random access","Neither &mdash; memory is always faster"],a:0,
+ e:"The book concedes memory wins <b>for random access</b>. But for the <b>sequential</b> pattern an append-only log produces, the page cache makes sequential disk <b>faster than a heap-allocated data structure at large scale</b>, for two stated reasons: sequential disk reads <b>saturate the memory bus rather than L3 cache</b>, and the kernel's <b>LRU</b> page cache is <b>better tuned than a custom in-process cache</b> for this workload."},
+{s:"8.3",q:"Kafka's default retention period (<code>retention.ms</code>) is:",o:["7 days","24 hours","30 days","Until consumed"],a:0,
+ e:"<b><code>retention.ms</code> = 7 days by default.</b> Retention can also be bounded by total log size via <b><code>retention.bytes</code></b>. <b>When both conditions are reached, the oldest segment files are deleted.</b> &ldquo;Until consumed&rdquo; is the traditional-queue answer and is exactly what Kafka does <i>not</i> do."},
+{s:"8.3",q:"A consumer that has not read a partition before its messages expire will:",o:["Miss those messages &mdash; a deliberate trade of throughput over guaranteed delivery to slow consumers","Trigger an automatic re-send from the producer","Block the broker until it catches up","Receive them from a follower replica"],a:0,
+ e:"The book frames this as <b>a design choice, not a bug</b>: it &ldquo;<b>prioritises throughput over guaranteed delivery to slow consumers</b>&rdquo;. Kafka will never hold the log open waiting for a laggard. Quote the phrase &mdash; the examiner is testing whether you understand it is intentional."},
+{s:"8.3",q:"Which is NOT one of the three uses of replay listed in the text?",o:["Compacting duplicate records","Backfilling a new downstream service","Bug recovery by resetting to a known-good offset","Multi-consumer independence"],a:0,
+ e:"The three listed are <b>Backfilling</b> (a new service processes historical data <b>without re-ingesting from the source</b>), <b>Bug recovery</b> (reset to the <b>last known-good offset</b> and reprocess), and <b>Multi-consumer independence</b> (a second group starts fresh at <b>offset 0</b> without affecting the first). Log compaction is a genuine Kafka feature but is not one of these three."},
+{s:"8.3",q:"Replay is possible in Kafka fundamentally because:",o:["Offsets are persistent and messages are not deleted on consumption","The producer keeps a copy of every message","ZooKeeper journals every read","Consumers write their reads back to the topic"],a:0,
+ e:"&ldquo;Because <b>offsets are persistent</b> and <b>messages are not deleted on consumption</b>, any consumer can reset its offset to <b>any point in the retention window</b> and re-read.&rdquo; Both halves matter: persistent offsets give you the bookmark, non-destructive reads give you the book."},
+{s:"8.3",q:"Exactly-once semantics were introduced in which Kafka version and year?",o:["Kafka 0.11, 2017","Kafka 2.4, 2019","Kafka 3.0, 2021","Kafka 1.0, 2017"],a:0,
+ e:"<b>Kafka 0.11 (2017)</b>, via <b>two</b> mechanisms: the <b>idempotent producer</b> and the <b>transactional API</b>. Keep the ladder straight: <b>0.11 = exactly-once, 2.4+ = cooperative rebalancing, 3.0 = KRaft</b>."},
+{s:"8.3",q:"The idempotent producer prevents duplicates by:",o:["Assigning a monotonically increasing sequence number to each batch, which the broker uses to deduplicate","Hashing the message value and rejecting matches","Requiring consumers to deduplicate on read","Writing every message twice and comparing"],a:0,
+ e:"&ldquo;The producer assigns a <b>monotonically increasing sequence number to each batch</b>. If the broker receives a <b>duplicate batch</b> (e.g. due to a network retry), it <b>deduplicates using the sequence number</b>.&rdquo; Scope matters: this prevents duplicates caused by <b>producer retries</b> only &mdash; it says nothing about multi-partition atomicity, which is the transactional API's job."},
+{s:"8.3",q:"The Kafka transactional API allows a producer to:",o:["Send messages to multiple partitions and either commit them all atomically or abort","Lock a partition for exclusive writing","Guarantee ordering across all topics","Roll back a consumer's offset automatically"],a:0,
+ e:"Open a transaction, send to <b>multiple partitions</b>, then either <b>commit</b> (all messages visible <b>atomically</b>) or <b>abort</b> (roll back). Combined with <code>isolation.level=read_committed</code> on the consumer, this gives exactly-once across the full <b>produce&ndash;consume&ndash;produce</b> pipeline &mdash; quote that three-step phrase."},
+{s:"8.3",q:"Which consumer-side setting is required for exactly-once with transactions?",o:["isolation.level=read_committed","auto.offset.reset=earliest","enable.auto.commit=false","acks=all"],a:0,
+ e:"<code>isolation.level=read_committed</code> makes the consumer skip messages belonging to <b>aborted</b> transactions. <b>Sort the settings by side:</b> producer &rarr; <code>acks</code>, <code>batch.size</code>, <code>linger.ms</code>, <code>retries</code>; consumer &rarr; <code>group_id</code>, <code>auto_offset_reset</code>, <code>enable_auto_commit</code>, <code>isolation.level</code>."},
+{s:"8.3",q:"The Confluent Schema Registry registers each schema version under a subject, typically named:",o:["{topic}-value","{topic}-schema","{groupId}-value","{broker}-registry"],a:0,
+ e:"It registers every <b>Avro, Protobuf or JSON Schema</b> version under a <b>subject</b>, typically <code>{topic}-value</code>. <b>Producers embed the schema ID &mdash; an integer &mdash; in each message; consumers look up the schema by ID on receipt.</b> That ID-in-the-message design is what keeps the payload small."},
+{s:"8.3",q:"The Schema Registry compatibility policies are:",o:["BACKWARD, FORWARD, FULL","STRICT, LOOSE, NONE","READ, WRITE, BOTH","MAJOR, MINOR, PATCH"],a:0,
+ e:"The registry <b>enforces a compatibility policy &mdash; BACKWARD, FORWARD or FULL &mdash; that rejects schema changes which would break existing consumers</b>. The book's verdict: at Netflix and LinkedIn, deploying a schema registry is considered <b>non-negotiable</b> for production Kafka usage."},
+{s:"8.3",q:"The scale figure the text quotes for Netflix's Kafka usage is:",o:["4,000 topics and 400 microservices","400 topics and 40 microservices","40,000 topics and 4,000 microservices","1,000 topics and 100 microservices"],a:0,
+ e:"<b>4,000 topics and 400 microservices.</b> The failure it motivates: &ldquo;a producer that <b>adds a field to its Avro schema without warning</b> causes <b>all consumers to crash</b> on the next schema change&rdquo; &mdash; which is the argument for the Schema Registry. <b>Memory hook:</b> ten times as many topics as services."},
+{s:"8.3",q:"The chapter epigraph about the unified log is attributed to:",o:["Jay Kreps, LinkedIn Engineering, 2013","Jun Rao, Confluent, 2011","Neha Narkhede, ACM Queue, 2015","Doug Cutting, Apache Blog, 2009"],a:0,
+ e:"<b>Jay Kreps</b>, <i>The Log: What Every Software Engineer Should Know About Real-Time Data's Unifying Abstraction</i>, <b>LinkedIn Engineering, 2013</b>. The quote's claim: the unified log is &ldquo;a structure <b>so simple that we take it for granted</b>, and <b>so fundamental that we underestimate it</b>&rdquo;. All three distractor names are real Kafka figures, so the year and venue are what separate them."},
+{s:"8.3",q:"In the sample producer, <code>key=str(txn[\"sender\"])</code> is used so that:",o:["All transactions from the same sender land in the same partition, preserving send-order","Each transaction goes to a different partition for speed","The broker can encrypt per sender","The consumer group can be auto-assigned"],a:0,
+ e:"The code comment in Listing 8.4 says it outright: keying on sender <b>ensures all transactions from the same sender land in the same partition, preserving send-order</b>. Without a key the producer round-robins and that ordering is lost &mdash; this is the practical payoff of <code>hash(key) % P</code>."},
+{s:"8.3",q:"<code>auto_offset_reset=\"earliest\"</code> tells a brand-new consumer group to:",o:["Start reading from offset 0","Start from the newest message","Fail if no offset is committed","Reset every partition to the retention boundary"],a:0,
+ e:"Listing 8.4 comments it as &ldquo;<b>start from offset 0 if new group</b>&rdquo;. This is the setting that makes <b>multi-consumer independence</b> work in practice: a second group can read the full retained history without touching the first group's position. The same listing also sets <code>enable_auto_commit=True</code> with <code>auto_commit_interval_ms=5000</code>."},
+{s:"8.3",q:"Kafka's central innovation is best summarised as:",o:["A rethinking of what a message broker should be &mdash; messages as records in a durable, immutable, ordered log","A novel consensus algorithm","A custom network protocol faster than TCP","A specialised hardware accelerator"],a:0,
+ e:"The book rules out the alternatives explicitly: &ldquo;<b>not a clever algorithm</b> or a <b>novel hardware optimisation</b>: it is a <b>rethinking of what a message broker should be</b>.&rdquo; If a question asks what Kafka's innovation is <i>not</i>, those two phrases are the answer."},
+{s:"8.3",q:"The five Kafka concepts combine to deliver which three properties?",o:["Durability, parallelism and horizontal scalability","Consistency, availability and partition tolerance","Compression, encryption and deduplication","Low latency, low cost and simplicity"],a:0,
+ e:"Section 8.3.2 opens with this: the five foundational concepts &ldquo;work together to deliver <b>durability, parallelism and horizontal scalability</b>&rdquo;. Learning objective 5 phrases it as <b>durability, parallelism and exactly-once-capable messaging</b> &mdash; either wording earns the mark; do not offer CAP, which belongs to Chapter 1."}
+];
+
+/* ---------------- engine ---------------- */
+const LETTERS=["A","B","C","D","E"];
+const $=s=>document.querySelector(s), quiz=$("#quiz");
+let list=[], answered={}, wrongIds=new Set(), onlyWrong=false;
+
+QS.forEach((q,i)=>q._id=i);          /* stable id: survives shuffling the array */
+function idOf(q){return q._id;}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* Each question is authored with the correct option first; scramble on render
+   so the answer position is never predictable. */
+function build(){
+  const f=$("#filter").value;
+  list=QS.filter(q=>f==="all"||q.s===f).filter(q=>!onlyWrong||wrongIds.has(idOf(q)));
+  quiz.innerHTML="";
+  if(!list.length){quiz.innerHTML='<div class="tip"><span class="tag">Nothing to show</span>No questions match this filter. Clear &ldquo;Retry wrong&rdquo; or pick another section.</div>';return;}
+  list.forEach((q,i)=>{
+    const id=idOf(q);
+    if(!q._ord){q._ord=shuffle(q.o.map((_,k)=>k));}
+    const el=document.createElement("div");
+    el.className="q"; el.dataset.id=id;
+    el.innerHTML=
+      '<div class="qhead"><span class="qn">Q'+(i+1)+'</span><span class="qsec">'+q.s+'</span>'+
+      '<span class="qtext">'+q.q+'</span></div><div class="opts"></div>'+
+      '<div class="expl"><span class="lbl">Why</span>'+q.e+'</div>';
+    const box=el.querySelector(".opts");
+    q._ord.forEach((origIdx,pos)=>{
+      const b=document.createElement("button");
+      b.className="opt"; b.type="button";
+      b.innerHTML='<span class="lt">'+LETTERS[pos]+'</span><span>'+q.o[origIdx]+'</span>';
+      b.onclick=()=>pick(el,q,origIdx);
+      box.appendChild(b);
+    });
+    quiz.appendChild(el);
+    if(answered[id]!==undefined) replay(el,q,answered[id]);
+  });
+  score();
+}
+
+function pick(el,q,chosen){
+  if(el.classList.contains("answered"))return;
+  answered[idOf(q)]=chosen;
+  if(chosen!==q.a) wrongIds.add(idOf(q)); else wrongIds.delete(idOf(q));
+  replay(el,q,chosen); score();
+}
+
+function replay(el,q,chosen){
+  el.classList.add("answered");
+  el.classList.add(chosen===q.a?"done":"wrong");
+  [...el.querySelectorAll(".opt")].forEach((b,pos)=>{
+    const orig=q._ord[pos]; b.disabled=true;
+    if(orig===q.a) b.classList.add("is-ok");
+    else if(orig===chosen) b.classList.add("is-no");
+    else b.classList.add("dim");
+  });
+}
+
+function score(){
+  const ids=list.map(idOf);
+  const done=ids.filter(i=>answered[i]!==undefined);
+  const ok=done.filter(i=>{const q=QS.find(x=>x._id===i); return q && answered[i]===q.a;}).length;
+  const no=done.length-ok;
+  $("#scoreTxt").textContent=ok+" / "+list.length;
+  $("#okTxt").textContent=ok; $("#noTxt").textContent=no;
+  $("#barFill").style.width=(list.length?done.length/list.length*100:0)+"%";
+  const card=$("#scorecard");
+  if(done.length===list.length&&list.length){
+    const pct=Math.round(ok/list.length*100);
+    $("#finalBig").textContent=pct+"%";
+    $("#finalVerdict").innerHTML = pct>=90 ? "Exam-ready. Do one last pass over the Hard Facts tables."
+      : pct>=75 ? "Solid. Drill the misses, then re-read the Traps section."
+      : pct>=50 ? "Half there. Re-read the section you scored worst on, then retry."
+      : "Read 8.1&ndash;8.3 again before drilling. The Hard Facts tables are the fastest route.";
+    card.classList.add("show");
+  } else card.classList.remove("show");
+}
+
+function reset(){answered={};wrongIds.clear();onlyWrong=false;QS.forEach(q=>delete q._ord);$("#scorecard").classList.remove("show");build();window.scrollTo({top:$("#mcq").offsetTop-70,behavior:"smooth"});}
+function retryWrong(){
+  if(!wrongIds.size){alert("No wrong answers recorded yet.");return;}
+  wrongIds.forEach(i=>{delete answered[i];const q=QS.find(x=>x._id===i); if(q) delete q._ord;});
+  onlyWrong=true;$("#filter").value="all";build();
+  window.scrollTo({top:$("#mcq").offsetTop-70,behavior:"smooth"});
+}
+
+$("#filter").onchange=()=>{onlyWrong=false;build();};
+$("#shuffleBtn").onclick=()=>{shuffle(QS);QS.forEach(q=>delete q._ord);build();};
+$("#resetBtn").onclick=reset; $("#resetBtn2").onclick=reset;
+$("#wrongBtn").onclick=retryWrong; $("#wrongBtn2").onclick=retryWrong;
+
+/* ---------------- chrome ---------------- */
+const root=document.documentElement;
+try{const t=localStorage.getItem("bda8theme"); if(t) root.dataset.theme=t;}catch(e){}
+$("#themeBtn").onclick=()=>{
+  root.dataset.theme = root.dataset.theme==="dark" ? "light" : "dark";
+  try{localStorage.setItem("bda8theme",root.dataset.theme);}catch(e){}
+};
+$("#printBtn").onclick=()=>window.print();
+const topBtn=$("#toTop"); topBtn.onclick=()=>window.scrollTo({top:0,behavior:"smooth"});
+const secs=[...document.querySelectorAll("section, header.hero")];
+const chips=[...document.querySelectorAll("#nav a")];
+addEventListener("scroll",()=>{
+  const h=document.body.scrollHeight-innerHeight;
+  $("#progress").style.width=(h>0?scrollY/h*100:0)+"%";
+  topBtn.classList.toggle("show",scrollY>500);
+  let cur="";
+  secs.forEach(s=>{if(s.getBoundingClientRect().top<=90)cur=s.id;});
+  chips.forEach(c=>c.classList.toggle("active",c.getAttribute("href")==="#"+cur));
+},{passive:true});
+
+build();
+</script>
+</body>
+</html>
